@@ -159,11 +159,13 @@ console.log('test');
         state.map.setLevel(state.options.level || 3);
         return;
       }
-      // 반지름 스케일(px) - 크기 줄임
+      // 반지름 스케일(px) - 이용자 수에 따라 최대 1.5배까지 증가
       const maxVisitors = Math.max(1, rows.reduce((m,l)=>Math.max(m, Number(l.visitors)||0), 1));
       const baseScale = v => {
         const s = Math.sqrt(Math.max(0, Number(v)||0) / maxVisitors);
-        return Math.max(16, Math.round(4 + s*12)); // 크기 줄임
+        const baseSize = 16; // 기본 크기
+        const maxSize = Math.round(baseSize * 1.5); // 최대 1.5배
+        return Math.max(baseSize, Math.min(maxSize, Math.round(baseSize + s * (maxSize - baseSize))));
       };
 
       const bounds = new kakao.maps.LatLngBounds();
