@@ -58,6 +58,125 @@ console.log('test');
     });
   }
 
+  // 구별 도서관 개수 계산
+  function calculateAreaLibraries(libraries) {
+    const areaCounts = {};
+    
+    libraries.forEach(lib => {
+      const address = lib.address || '';
+      // 주소에서 구 이름 추출 (예: "서울특별시 강남구 ..." -> "강남구")
+      const districtMatch = address.match(/([가-힣]+구)/);
+      if (districtMatch) {
+        const district = districtMatch[1];
+        areaCounts[district] = (areaCounts[district] || 0) + 1;
+      }
+    });
+    
+    return areaCounts;
+  }
+
+  // 구별 클러스터 생성
+  function createAreaClusters(libraries) {
+    const areaCounts = calculateAreaLibraries(libraries);
+    
+    console.log('구별 도서관 개수:', areaCounts);
+    console.log('사용 가능한 구역:', state.areas.map(a => a.name));
+    
+    // 기존 클러스터 제거
+    clearAreaClusters();
+    
+    state.areas.forEach(area => {
+      const count = areaCounts[area.name] || 0;
+      if (count > 0) {
+        console.log(`${area.name}: ${count}개 도서관`);
+        const cluster = createClusterOverlay(area, count);
+        state.areaClusters.push(cluster);
+      }
+    });
+    
+    console.log('생성된 클러스터 개수:', state.areaClusters.length);
+  }
+
+  // 클러스터 오버레이 생성
+  function createClusterOverlay(area, count) {
+    // 구의 중심점 계산
+    const center = calculateAreaCenter(area.path);
+    
+    // 도서관 개수에 따른 크기 클래스 결정
+    let sizeClass = '';
+    if (count <= 3) sizeClass = 'small';
+    else if (count >= 10) sizeClass = 'large';
+    
+    const clusterDiv = document.createElement('div');
+    clusterDiv.className = 'area-cluster';
+    clusterDiv.innerHTML = `
+      <div class="cluster-circle ${sizeClass}">
+        <span class="cluster-count">${count}</span>
+      </div>
+      <div class="cluster-label">${area.name}</div>
+    `;
+    
+    const overlay = new kakao.maps.CustomOverlay({
+      position: center,
+      content: clusterDiv,
+      yAnchor: 0.5,
+      xAnchor: 0.5,
+      zIndex: 10
+    });
+    
+    // 클러스터 클릭 이벤트
+    clusterDiv.addEventListener('click', () => {
+      // 해당 구로 확대
+      state.map.setLevel(10);
+      state.map.panTo(center);
+    });
+    
+    return overlay;
+  }
+
+  // 구의 중심점 계산
+  function calculateAreaCenter(path) {
+    if (!path || path.length === 0) {
+      return new kakao.maps.LatLng(37.5665, 126.9780);
+    }
+    
+    let sumLat = 0, sumLng = 0;
+    path.forEach(point => {
+      sumLat += point.getLat();
+      sumLng += point.getLng();
+    });
+    
+    return new kakao.maps.LatLng(sumLat / path.length, sumLng / path.length);
+  }
+
+  // 구별 클러스터 제거
+  function clearAreaClusters() {
+    state.areaClusters.forEach(cluster => {
+      try {
+        cluster.setMap(null);
+      } catch(_) {}
+    });
+    state.areaClusters = [];
+  }
+
+  // 구별 클러스터 표시
+  function showAreaClusters() {
+    state.areaClusters.forEach(cluster => {
+      try {
+        cluster.setMap(state.map);
+      } catch(_) {}
+    });
+  }
+
+  // 구별 클러스터 숨기기
+  function hideAreaClusters() {
+    state.areaClusters.forEach(cluster => {
+      try {
+        cluster.setMap(null);
+      } catch(_) {}
+    });
+  }
+
   function updateClusteringMode(){
     if (!state.map) return;
     const level = state.map.getLevel ? state.map.getLevel() : 99;
@@ -81,6 +200,9 @@ console.log('test');
       try{ state.clusterer.clear(); }catch(_){ }
       try{ state.clusterer.addMarkers(markersOnly); }catch(_){ }
       try{ state.clusterer.setMap(state.map); }catch(_){ }
+      
+      // 구별 클러스터 표시
+      showAreaClusters();
     } else {
       // 레벨 8 이하일 때: 개별 마커 표시
       console.log('개별 마커 모드 활성화');
@@ -91,6 +213,9 @@ console.log('test');
       markersOnly.forEach(m => { 
         try{ m.setMap(state.map); }catch(_){} 
       });
+      
+      // 구별 클러스터 숨기기
+      hideAreaClusters();
     }
   }
 
@@ -147,6 +272,8 @@ console.log('test');
     try{ state.clusterer && state.clusterer.setMap(null); }catch(_){}
     // 폴리곤 정리
     removePolygons();
+    // 구별 클러스터 정리
+    clearAreaClusters();
   }
 
   function render(libraries){
@@ -159,6 +286,18 @@ console.log('test');
         state.map.setLevel(state.options.level || 3);
         return;
       }
+      
+      // 폴리곤 초기화 (구별 경계선) 후 클러스터 생성
+      if (state.areas.length === 0) {
+        initPolygons().then(() => {
+          // 구별 클러스터 생성
+          createAreaClusters(rows);
+        });
+      } else {
+        // 구별 클러스터 생성
+        createAreaClusters(rows);
+      }
+      
       // 반지름 스케일(px)
       const maxVisitors = Math.max(1, rows.reduce((m,l)=>Math.max(m, Number(l.visitors)||0), 1));
       const baseScale = v => {
@@ -238,7 +377,7 @@ console.log('test');
   }
 
   function initPolygons() {
-    if (!state.map) return;
+    if (!state.map) return Promise.resolve();
     
     // CustomOverlay 초기화
     if (!state.customOverlay) {
@@ -246,7 +385,7 @@ console.log('test');
     }
 
     // sig.json 파일에서 서울시 행정구역 데이터 로드
-    fetch('sig.json')
+    return fetch('sig.json')
       .then(response => response.json())
       .then(geojson => {
         const units = geojson.features;
@@ -274,9 +413,13 @@ console.log('test');
         state.areas.forEach(area => {
           displayArea(area);
         });
+        
+        console.log('폴리곤 초기화 완료:', state.areas.length, '개 구역');
+        return state.areas;
       })
       .catch(error => {
         console.error('폴리곤 데이터 로드 실패:', error);
+        return [];
       });
   }
 
