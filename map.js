@@ -163,8 +163,8 @@ console.log('test');
       const maxVisitors = Math.max(1, rows.reduce((m,l)=>Math.max(m, Number(l.visitors)||0), 1));
       const baseScale = v => {
         const s = Math.sqrt(Math.max(0, Number(v)||0) / maxVisitors);
-        const baseSize = 16; // 기본 크기
-        const maxSize = Math.round(baseSize * 1.5); // 최대 1.5배
+        const baseSize = 14; // 기본 크기
+        const maxSize = Math.round(baseSize * 2); // 최대 1.5배
         return Math.max(baseSize, Math.min(maxSize, Math.round(baseSize + s * (maxSize - baseSize))));
       };
 
