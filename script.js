@@ -5,6 +5,7 @@ let selectedLibrary = null;
 const selectedBookCategories = new Set();
 const selectedSpaceCategories = new Set();
 const selectedElectronicCategories = new Set();
+const selectedComfortCategories = new Set();
 let selectedBookType = ''; // 'domestic' 또는 'foreign'
 let openNowOnly = false;
 let sortKey = '';
@@ -17,6 +18,10 @@ let minEUse = '';
 let hasChildrenRoom = false;
 let ageFocus = '';
 let subjectSort = '';
+
+// 장르별 필터링 상태
+let selectedGenre = '';
+let selectedBookTypeForMap = '';
 
 const CSV_PATH = 'seoul_lib_preprocessed6.csv'; // 프로젝트 루트에 CSV 파일을 두면 됩니다.
 // 지도는 MapView(map.js)에서 전담
@@ -49,6 +54,8 @@ async function loadLibrariesFromCSV(){
     const mapped = rows.map(r => mapCsvRowToLibrary(r, nextId++));
     // 필수 좌표/이름 없는 행 제외
     allLibraries = mapped.filter(l => l && l.name);
+    // 전역 변수로 설정 (MapView에서 사용)
+    window.allLibraries = allLibraries;
   }catch(e){
     allLibraries = [...sampleLibraries];
   }
@@ -134,6 +141,28 @@ function mapCsvRowToLibrary(r, id){
     seatsSeniorDisabled: toNumber(r['좌석수_노인 및 장애인 열람석']),
     pcs: toNumber(r['설비_이용자용컴퓨터수']),
     visitors: toNumber(r['이용자수_도서관방문자수']),
+    // 쾌적함 계산: 면적 / 방문자수 (㎡/명)
+    comfortRatio: (() => {
+      const area = toNumber(r['면적_도서관 서비스 제공 면적']);
+      const visitors = toNumber(r['이용자수_도서관방문자수']);
+      if (area > 0 && visitors > 0) {
+        return area / visitors;
+      }
+      return 0;
+    })(),
+    // 쾌적함 등급 분류
+    comfortLevel: (() => {
+      const area = toNumber(r['면적_도서관 서비스 제공 면적']);
+      const visitors = toNumber(r['이용자수_도서관방문자수']);
+      if (area > 0 && visitors > 0) {
+        const ratio = area / visitors;
+        if (ratio >= 2.0) return '매우좋음';
+        if (ratio >= 1.0) return '좋음';
+        if (ratio >= 0.5) return '보통';
+        return '좁음';
+      }
+      return '정보없음';
+    })(),
     loansPrintChild: toNumber(r['인쇄자료_어린이_합계']) || toNumber(r['인쇄자료_대출_어린이']),
     loansPrintTeen: toNumber(r['인쇄자료_청소년_합계']) || toNumber(r['인쇄자료_대출_청소년']),
     loansPrintAdult: toNumber(r['인쇄자료_성인_합계']) || toNumber(r['인쇄자료_대출_성인']),
@@ -482,6 +511,10 @@ function initializeIntroScreen() {
     showElectronicAgeRanking('어린이');
   }
   
+
+
+
+
   // 어린이 데이터 로드 함수
   function loadChildrenData() {
     const allLibs = allLibraries.length ? allLibraries : sampleLibraries;
@@ -493,10 +526,14 @@ function initializeIntroScreen() {
     const childrenLibraryCount = childrenLibraries.length;
     const avgChildSeats = childrenLibraries.length > 0 ? 
       Math.round(childrenLibraries.reduce((sum, lib) => sum + (lib.seatsChild || 0), 0) / childrenLibraries.length) : 0;
+    const totalChildrenHoldings = childrenLibraries.reduce((sum, lib) => sum + calculateChildrenHoldings(lib), 0);
+    const avgChildrenHoldings = childrenLibraries.length > 0 ? 
+      Math.round(totalChildrenHoldings / childrenLibraries.length) : 0;
     
     // 통계 표시
     document.getElementById('childrenLibraryCount').textContent = childrenLibraryCount;
     document.getElementById('avgChildSeats').textContent = avgChildSeats;
+    document.getElementById('avgChildrenHoldings').textContent = avgChildrenHoldings.toLocaleString();
     
     // 도서관 목록 표시
     const listContainer = document.getElementById('childrenLibraryList');
@@ -505,8 +542,8 @@ function initializeIntroScreen() {
       return;
     }
     
-    // 어린이 좌석 수 기준으로 정렬
-    childrenLibraries.sort((a, b) => (b.seatsChild || 0) - (a.seatsChild || 0));
+    // 어린이 보유도서 기준으로 정렬 (어린이 도서가 많은 순)
+    childrenLibraries.sort((a, b) => calculateChildrenHoldings(b) - calculateChildrenHoldings(a));
     
     const childrenContainer = document.getElementById('childrenLibraryContainer');
     if (childrenContainer) {
@@ -514,7 +551,10 @@ function initializeIntroScreen() {
         <div class="children-library-simple-item" onclick="showChildrenLibraryModal(${index})">
           <span class="library-rank">${index + 1}</span>
           <span class="library-name">${lib.name}</span>
-          <span class="library-seats">🪑 ${lib.seatsChild || 0}석</span>
+          <div class="library-details">
+            <span class="library-seats">🪑 ${lib.seatsChild || 0}석</span>
+            <span class="library-holdings">📚 ${calculateChildrenHoldings(lib).toLocaleString()}권</span>
+          </div>
         </div>
       `).join('');
       
@@ -1121,17 +1161,42 @@ function initializeIntroScreen() {
   }
 }
 
+// 어린이 보유도서 계산 함수 (모달에서 사용)
+function calculateChildrenHoldings(library) {
+  let totalChildrenHoldings = 0;
+  
+  // 인쇄자료 어린이 도서 합산
+  const printGenres = ['총류', '철학', '종교', '사회과학', '순수과학', '기술과학', '예술', '언어', '문학', '역사'];
+  printGenres.forEach(genre => {
+    totalChildrenHoldings += (library[`인쇄자료_어린이_${genre}`] || 0);
+  });
+  
+  // 전자자료 어린이 도서 합산
+  const electronicGenres = ['총류', '철학', '종교', '사회과학', '순수과학', '기술과학', '예술', '언어', '문학', '역사'];
+  electronicGenres.forEach(genre => {
+    totalChildrenHoldings += (library[`전자자료_어린이_${genre}`] || 0);
+  });
+  
+  return totalChildrenHoldings;
+}
+
 // 어린이 도서관 모달 표시
 function showChildrenLibraryModal(index) {
   const lib = window.childrenLibrariesData[index];
-  if (!lib) return;
+  if (!lib) {
+    console.error('도서관 데이터를 찾을 수 없습니다:', index);
+    return;
+  }
+  
+  console.log('모달에 표시할 도서관 데이터:', lib);
+  console.log('어린이 보유도서:', calculateChildrenHoldings(lib));
 
   const modalHTML = `
     <div class="children-modal-overlay" id="childrenModalOverlay" onclick="closeChildrenModal()">
       <div class="children-modal-content" onclick="event.stopPropagation()">
         <div class="children-modal-header">
           <h3>👶 ${lib.name}</h3>
-          <button class="children-modal-close" onclick="closeChildrenModal()">&times;</button>
+          <button class="children-modal-close" onclick="closeChildrenModal()" type="button">&times;</button>
         </div>
         <div class="children-modal-body">
           <div class="children-modal-info">
@@ -1152,8 +1217,8 @@ function showChildrenLibraryModal(index) {
               <span class="info-value">${lib.seatsTotal || 0}석</span>
             </div>
             <div class="info-row">
-              <span class="info-label">📚 보유도서</span>
-              <span class="info-value">${((lib.holdingsDomestic || 0) + (lib.holdingsForeign || 0)).toLocaleString()}권</span>
+              <span class="info-label">📚 어린이 보유도서</span>
+              <span class="info-value">${calculateChildrenHoldings(lib).toLocaleString()}권</span>
             </div>
             <div class="info-row">
               <span class="info-label">🕐 운영시간</span>
@@ -1165,23 +1230,39 @@ function showChildrenLibraryModal(index) {
     </div>
   `;
 
+  // 기존 모달이 있다면 제거
+  const existingModal = document.getElementById('childrenModalOverlay');
+  if (existingModal) {
+    existingModal.remove();
+  }
+  
+  // 새 모달 삽입
   document.body.insertAdjacentHTML('beforeend', modalHTML);
   
   // 모달 애니메이션
   setTimeout(() => {
     const overlay = document.getElementById('childrenModalOverlay');
-    if (overlay) overlay.classList.add('show');
+    if (overlay) {
+      overlay.classList.add('show');
+      console.log('모달이 성공적으로 표시되었습니다!');
+    } else {
+      console.error('모달 요소를 찾을 수 없습니다!');
+    }
   }, 10);
 }
 
 // 어린이 도서관 모달 닫기
 function closeChildrenModal() {
+  console.log('모달 닫기 함수 호출됨');
   const overlay = document.getElementById('childrenModalOverlay');
   if (overlay) {
     overlay.classList.remove('show');
     setTimeout(() => {
       overlay.remove();
+      console.log('모달이 제거되었습니다.');
     }, 300);
+  } else {
+    console.error('닫을 모달을 찾을 수 없습니다!');
   }
 }
 
@@ -1256,6 +1337,98 @@ function initializeEventListeners() {
   });
 }
 
+  // 쾌적함별 지도 필터링 함수
+  function filterLibrariesByComfort(comfortLevel) {
+    if (!comfortLevel || comfortLevel === 'total') {
+      // 전체 선택시 모든 도서관 표시
+      if (window.MapView) {
+        MapView.showAllLibraries();
+      }
+      return;
+    }
+    
+    // 해당 쾌적함 등급의 도서관 필터링
+    const filteredLibraries = allLibraries.filter(lib => lib.comfortLevel === comfortLevel);
+    
+    // 지도에 필터링된 도서관만 표시
+    if (window.MapView) {
+      const comfortLabels = {
+        '매우좋음': '매우 쾌적한 도서관',
+        '좋음': '쾌적한 도서관',
+        '보통': '보통 쾌적함 도서관',
+        '좁음': '좁은 도서관'
+      };
+      MapView.showFilteredLibraries(filteredLibraries, `${comfortLabels[comfortLevel]} (${filteredLibraries.length}개)`);
+    }
+    
+    // 도서관 목록도 함께 업데이트
+    libraries = filteredLibraries;
+    displayLibraries();
+    renderStats(filteredLibraries);
+  }
+
+  // 장르별 지도 필터링 함수
+  function filterLibrariesByGenre(bookType, genre) {
+  if (!genre || genre === 'total') {
+    // 전체 선택시 모든 도서관 표시
+    selectedGenre = '';
+    selectedBookTypeForMap = '';
+    if (window.MapView) {
+      MapView.showAllLibraries();
+    }
+    
+    // 도서관 목록도 전체로 복원
+    libraries = allLibraries;
+    displayLibraries();
+    renderStats(allLibraries);
+    return;
+  }
+  
+  selectedGenre = genre;
+  selectedBookTypeForMap = bookType;
+  
+  // 해당 장르의 비율이 높은 도서관 10개 선택
+  const filteredLibraries = allLibraries
+    .filter(lib => {
+      if (bookType === 'domestic') {
+        const totalDomestic = lib.holdingsDomestic || 0;
+        const genreValue = lib.domesticCategories?.find(cat => cat.name === genre)?.value || 0;
+        return totalDomestic > 0 && genreValue > 0;
+      } else if (bookType === 'foreign') {
+        const totalForeign = lib.holdingsForeign || 0;
+        const genreValue = lib.foreignCategories?.find(cat => cat.name === genre)?.value || 0;
+        return totalForeign > 0 && genreValue > 0;
+      }
+      return false;
+    })
+    .map(lib => {
+      if (bookType === 'domestic') {
+        const totalDomestic = lib.holdingsDomestic || 0;
+        const genreValue = lib.domesticCategories?.find(cat => cat.name === genre)?.value || 0;
+        const ratio = totalDomestic > 0 ? (genreValue / totalDomestic) * 100 : 0;
+        return { ...lib, genreRatio: ratio };
+      } else if (bookType === 'foreign') {
+        const totalForeign = lib.holdingsForeign || 0;
+        const genreValue = lib.foreignCategories?.find(cat => cat.name === genre)?.value || 0;
+        const ratio = totalForeign > 0 ? (genreValue / totalForeign) * 100 : 0;
+        return { ...lib, genreRatio: ratio };
+      }
+      return lib;
+    })
+    .sort((a, b) => b.genreRatio - a.genreRatio)
+    .slice(0, 10);
+  
+  // 지도에 필터링된 도서관만 표시
+  if (window.MapView) {
+    MapView.showFilteredLibraries(filteredLibraries, `${bookType === 'domestic' ? '국내서' : '국외서'} ${genre} 상위 10개 도서관`);
+  }
+  
+  // 도서관 목록도 함께 업데이트
+  libraries = filteredLibraries;
+  displayLibraries();
+  renderStats(filteredLibraries);
+}
+
 function setupCategoryChips() {
   const container = document.querySelector('.category-bar');
   if (!container) return;
@@ -1272,13 +1445,17 @@ function setupCategoryChips() {
       handleBookTypeSelection(btn, value);
     } else if (type === 'book') {
       // 2단계: 세부 분류 선택
-    btn.classList.toggle('active');
+      btn.classList.toggle('active');
       if (btn.classList.contains('active')) {
         selectedBookCategories.add(value);
+        // 장르별 지도 필터링 적용
+        filterLibrariesByGenre(selectedBookType, value);
       } else {
         selectedBookCategories.delete(value);
+        // 선택 해제시 전체 도서관 표시
+        filterLibrariesByGenre(selectedBookType, 'total');
       }
-    applyFilters();
+      applyFilters();
     } else if (type === 'electronic') {
       // 전자자료 카테고리
       btn.classList.toggle('active');
@@ -1295,6 +1472,19 @@ function setupCategoryChips() {
         selectedSpaceCategories.add(value);
       } else {
         selectedSpaceCategories.delete(value);
+      }
+      applyFilters();
+    } else if (type === 'comfort') {
+      // 쾌적함 카테고리
+      btn.classList.toggle('active');
+      if (btn.classList.contains('active')) {
+        selectedComfortCategories.add(value);
+        // 쾌적함별 지도 필터링 적용
+        filterLibrariesByComfort(value);
+      } else {
+        selectedComfortCategories.delete(value);
+        // 선택 해제시 전체 도서관 표시
+        filterLibrariesByComfort('total');
       }
       applyFilters();
     }
@@ -1315,6 +1505,8 @@ function handleBookTypeSelection(btn, value) {
     // 세부 카테고리도 모두 해제
     selectedBookCategories.clear();
     document.querySelectorAll('[data-type="book"]').forEach(chip => chip.classList.remove('active'));
+    // 지도에 모든 도서관 표시
+    filterLibrariesByGenre('', 'total');
   } else {
     // 새로운 버튼 선택
     selectedBookType = value;
@@ -1323,6 +1515,8 @@ function handleBookTypeSelection(btn, value) {
     // 이전 세부 카테고리 선택 해제
     selectedBookCategories.clear();
     document.querySelectorAll('[data-type="book"]').forEach(chip => chip.classList.remove('active'));
+    // 지도에 모든 도서관 표시
+    filterLibrariesByGenre('', 'total');
   }
   
   applyFilters();
@@ -1388,6 +1582,10 @@ function applyFilters() {
   
   if (selectedSpaceCategories.size > 0) {
     result = result.filter((l) => l.spaceCategories && l.spaceCategories.some((c) => selectedSpaceCategories.has(c)));
+  }
+  // 쾌적함 카테고리 필터
+  if (selectedComfortCategories.size > 0) {
+    result = result.filter((l) => selectedComfortCategories.has(l.comfortLevel));
   }
   if (openNowOnly) result = result.filter(isOpenNow);
 
@@ -1456,6 +1654,14 @@ function createLibraryItem(library) {
   div.dataset.id = library.id;
   const totalHoldings = (library.holdingsDomestic||0) + (library.holdingsForeign||0);
   const statusBadge = openNowOnly && isOpenNow(library) ? '<div class="library-status">지금 운영중</div>' : '';
+  
+  // 쾌적함 정보 표시
+  const comfortInfo = library.comfortLevel && library.comfortLevel !== '정보없음' ? 
+    `<div class="library-comfort" title="사람당 면적: ${library.comfortRatio?.toFixed(2)}㎡/명">
+      <span class="comfort-label">쾌적함:</span>
+      <span class="comfort-level comfort-${library.comfortLevel}">${library.comfortLevel}</span>
+    </div>` : '';
+  
   div.innerHTML = `
     <div class="library-name">${library.name}</div>
     <div class="library-info">
@@ -1463,6 +1669,7 @@ function createLibraryItem(library) {
       <div>📚 보유도서: ${totalHoldings.toLocaleString()}권</div>
       <div>🪑 좌석: ${library.seatsTotal?.toLocaleString?.() || '-'}석 · 🖥️ PC: ${library.pcs ?? '-'}</div>
     </div>
+    ${comfortInfo}
     ${statusBadge}
   `;
   div.addEventListener('click', () => { selectLibrary(library); });
@@ -1556,11 +1763,23 @@ function renderStats(data){
   const avgSeats = Math.round(data.reduce((s,l)=>s+(l.seatsTotal||0),0)/(n||1));
   const avgHoldings = Math.round(data.reduce((s,l)=>s+((l.holdingsDomestic||0)+(l.holdingsForeign||0)),0)/(n||1));
   const totalLoans = data.reduce((s,l)=>s+(l.loansPrintTotal||0),0);
+  // 쾌적함 통계 계산
+  const comfortStats = data.reduce((acc, lib) => {
+    if (lib.comfortLevel && lib.comfortLevel !== '정보없음') {
+      acc[lib.comfortLevel] = (acc[lib.comfortLevel] || 0) + 1;
+    }
+    return acc;
+  }, {});
+  
+  const mostComfortable = Object.entries(comfortStats).sort((a, b) => b[1] - a[1])[0];
+  const comfortLabel = mostComfortable ? mostComfortable[0] : '정보없음';
+  const comfortCount = mostComfortable ? mostComfortable[1] : 0;
+  
   statsBar.innerHTML = `
     <div class="stat-card"><div class="stat-title">총 도서관 수</div><div class="stat-value" data-target="${n}">0</div></div>
     <div class="stat-card"><div class="stat-title">평균 좌석 수</div><div class="stat-value" data-target="${avgSeats}">0</div></div>
     <div class="stat-card"><div class="stat-title">평균 보유 자료</div><div class="stat-value" data-target="${avgHoldings}">0</div></div>
-    <div class="stat-card"><div class="stat-title">연간 대출 합계</div><div class="stat-value" data-target="${totalLoans}">0</div></div>
+    <div class="stat-card"><div class="stat-title">가장 많은 쾌적함</div><div class="stat-value" data-target="${comfortCount}">0</div><div class="stat-subtitle">${comfortLabel}</div></div>
   `;
   // 카운트업 애니메이션
   document.querySelectorAll('#statsBar .stat-value').forEach(el => {

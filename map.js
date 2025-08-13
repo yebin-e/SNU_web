@@ -9,6 +9,7 @@ console.log('test');
 (function(global){
   const state = {
     map: null,
+    clusterer: null,
     markers: [],
     hoverOverlay: null,
     selectedId: null,
@@ -17,15 +18,27 @@ console.log('test');
     containerId: 'map',
     options: { level: 8 },
     firstRender: true,
-    interacted: false
+    interacted: false,
+    // 폴리곤 관련 상태 추가
+    polygons: [],
+    areas: [],
+    detailMode: false,
+    customOverlay: null
   };
 
   function emit(event, payload){ (state.listeners[event]||[]).forEach(fn=>{ try{ fn(payload); }catch(_){} }); }
 
   function ensureKakaoLoaded(cb){
-    if (!global.kakao || !global.kakao.maps || !global.kakao.maps.load) return;
+    if (!global.kakao || !global.kakao.maps) {
+      console.log('카카오맵 API가 로드되지 않았습니다');
+      return;
+    }
     if (state.ready) return cb();
-    global.kakao.maps.load(()=>{ state.ready = true; cb(); });
+    global.kakao.maps.load(()=>{ 
+      state.ready = true; 
+      console.log('카카오맵 API 로드 완료');
+      cb(); 
+    });
   }
 
   function applyZoomFactor(baseSize){
@@ -45,6 +58,42 @@ console.log('test');
     });
   }
 
+  function updateClusteringMode(){
+    if (!state.map) return;
+    const level = state.map.getLevel ? state.map.getLevel() : 99;
+    const markersOnly = state.markers.map(m => m.marker);
+    console.log(`현재 레벨: ${level}, 마커 개수: ${markersOnly.length}, 클러스터러: ${state.clusterer ? '있음' : '없음'}`);
+    
+    if (!state.clusterer) {
+      // 클러스터러가 없으면 모든 레벨에서 개별 마커 표시
+      console.log('클러스터러 없음 - 개별 마커 표시');
+      markersOnly.forEach(m => { try{ m.setMap(state.map); }catch(_){} });
+      return;
+    }
+    if (level > 8) {
+      // 레벨 8보다 클 때: 클러스터링 모드
+      console.log('클러스터링 모드 활성화');
+      // 모든 개별 마커를 지도에서 제거
+      markersOnly.forEach(m => { 
+        try{ m.setMap(null); }catch(_){} 
+      });
+      // 클러스터러 초기화 후 마커들 추가
+      try{ state.clusterer.clear(); }catch(_){ }
+      try{ state.clusterer.addMarkers(markersOnly); }catch(_){ }
+      try{ state.clusterer.setMap(state.map); }catch(_){ }
+    } else {
+      // 레벨 8 이하일 때: 개별 마커 표시
+      console.log('개별 마커 모드 활성화');
+      // 클러스터러를 지도에서 제거
+      try{ state.clusterer.clear(); }catch(_){ }
+      try{ state.clusterer.setMap(null); }catch(_){ }
+      // 모든 개별 마커를 지도에 표시
+      markersOnly.forEach(m => { 
+        try{ m.setMap(state.map); }catch(_){} 
+      });
+    }
+  }
+
   function init(containerId, options){
     state.containerId = containerId || state.containerId;
     state.options = Object.assign({}, state.options, options||{});
@@ -60,16 +109,44 @@ console.log('test');
       const zoomCtrl = new kakao.maps.ZoomControl();
       state.map.addControl(zoomCtrl, kakao.maps.ControlPosition.RIGHT);
       kakao.maps.event.addListener(state.map, 'dragend', ()=>{ state.interacted = true; });
-      kakao.maps.event.addListener(state.map, 'zoom_changed', ()=>{ state.interacted = true; updateMarkerSizes(); });
+      kakao.maps.event.addListener(state.map, 'zoom_changed', ()=>{ 
+        state.interacted = true; 
+        updateMarkerSizes(); 
+        updateClusteringMode(); 
+        updatePolygonMode(); 
+      });
+      try{
+        // MarkerClusterer가 로드되었는지 확인
+        if (typeof kakao.maps.MarkerClusterer !== 'undefined'){
+          state.clusterer = new kakao.maps.MarkerClusterer({
+            map: null,
+            averageCenter: true,
+            minLevel: 9  // 레벨 8보다 클 때 클러스터링 시작
+          });
+          console.log('MarkerClusterer 초기화 완료');
+        } else {
+          console.log('MarkerClusterer를 사용할 수 없습니다 - 라이브러리가 로드되지 않았습니다');
+          console.log('사용 가능한 kakao.maps 객체:', Object.keys(kakao.maps));
+        }
+      }catch(e){ 
+        console.log('MarkerClusterer 초기화 실패:', e);
+        console.log('kakao.maps 객체:', kakao.maps);
+      }
     });
   }
 
   function clear(){
     if (!state.map) return;
-    try{ state.hoverOverlay && state.hoverOverlay.setMap(null); }catch(_){}
+    try{ state.hoverOverlay && state.hoverOverlay.setMap(null); }catch(_){ }
     state.hoverOverlay = null;
-    state.markers.forEach(m=>{ try{ m.setMap(null); }catch(_){} });
+    // 모든 개별 마커를 지도에서 제거
+    state.markers.forEach(m=>{ try{ m.marker.setMap(null); }catch(_){} });
     state.markers = [];
+    // 클러스터러 완전 정리
+    try{ state.clusterer && state.clusterer.clear(); }catch(_){}
+    try{ state.clusterer && state.clusterer.setMap(null); }catch(_){}
+    // 폴리곤 정리
+    removePolygons();
   }
 
   function render(libraries){
@@ -97,13 +174,14 @@ console.log('test');
         const size = applyZoomFactor(baseSize);
         const image = new kakao.maps.MarkerImage('icon.png', new kakao.maps.Size(size, size), { offset: new kakao.maps.Point(Math.round(size/2), size-2) });
         const marker = new kakao.maps.Marker({ position: pos, image, zIndex: 2 });
-        marker.setMap(state.map);
+        // 마커를 바로 지도에 표시하지 않고 상태에만 저장
 
         kakao.maps.event.addListener(marker, 'mouseover', () => showHoverCard(d, pos));
         kakao.maps.event.addListener(marker, 'mouseout', hideHoverCard);
         kakao.maps.event.addListener(marker, 'click', () => emit('markerClick', d));
         state.markers.push({ marker, baseSize, lib: d });
       });
+      updateClusteringMode();
       try{
         if (state.firstRender) {
           const sw = bounds.getSouthWest();
@@ -148,6 +226,118 @@ console.log('test');
   function hideHoverCard(){
     try{ state.hoverOverlay && state.hoverOverlay.setMap(null); }catch(_){ }
     state.hoverOverlay = null;
+  }
+
+  // 폴리곤 관련 함수들
+  function removePolygons() { 
+    for (let i = 0; i < state.polygons.length; i++) {
+      state.polygons[i].setMap(null);
+    }
+    state.areas = [];
+    state.polygons = [];
+  }
+
+  function initPolygons() {
+    if (!state.map) return;
+    
+    // CustomOverlay 초기화
+    if (!state.customOverlay) {
+      state.customOverlay = new kakao.maps.CustomOverlay({});
+    }
+
+    // sig.json 파일에서 서울시 행정구역 데이터 로드
+    fetch('sig.json')
+      .then(response => response.json())
+      .then(geojson => {
+        const units = geojson.features;
+        
+        units.forEach((unit, index) => {
+          const coordinates = unit.geometry.coordinates;
+          const name = unit.properties.SIG_KOR_NM;
+          const cd_location = unit.properties.SIG_CD;
+
+          const area = {
+            name: name,
+            path: [],
+            location: cd_location
+          };
+
+          // 좌표 변환 (GeoJSON은 [lng, lat] 순서, 카카오맵은 [lat, lng] 순서)
+          coordinates[0].forEach(coordinate => {
+            area.path.push(new kakao.maps.LatLng(coordinate[1], coordinate[0]));
+          });
+
+          state.areas[index] = area;
+        });
+
+        // 폴리곤 표시
+        state.areas.forEach(area => {
+          displayArea(area);
+        });
+      })
+      .catch(error => {
+        console.error('폴리곤 데이터 로드 실패:', error);
+      });
+  }
+
+  function displayArea(area) {
+    const polygon = new kakao.maps.Polygon({
+      map: state.map,
+      path: area.path,
+      strokeWeight: 2,
+      strokeColor: '#004c80',
+      strokeOpacity: 0.8,
+      fillColor: '#fff',
+      fillOpacity: 0.7
+    });
+    
+    state.polygons.push(polygon);
+
+    // 마우스 오버 이벤트
+    kakao.maps.event.addListener(polygon, 'mouseover', function (mouseEvent) {
+      polygon.setOptions({fillColor: '#09f'});
+      state.customOverlay.setContent('<div class="area">' + area.name + '</div>');
+      state.customOverlay.setPosition(mouseEvent.latLng);
+      state.customOverlay.setMap(state.map);
+    });
+
+    // 마우스 이동 이벤트
+    kakao.maps.event.addListener(polygon, 'mousemove', function (mouseEvent) {
+      state.customOverlay.setPosition(mouseEvent.latLng);
+    });
+
+    // 마우스 아웃 이벤트
+    kakao.maps.event.addListener(polygon, 'mouseout', function () {
+      polygon.setOptions({fillColor: '#fff'});
+      state.customOverlay.setMap(null);
+    });
+
+    // 클릭 이벤트
+    kakao.maps.event.addListener(polygon, 'click', function (mouseEvent) {
+      if (!state.detailMode) {
+        state.map.setLevel(10);
+        const latlng = mouseEvent.latLng;
+        state.map.panTo(latlng);
+      } else {
+        // 상세 모드에서의 클릭 이벤트 (필요시 구현)
+        console.log('클릭된 구역:', area.name, area.location);
+      }
+    });
+  }
+
+  function updatePolygonMode() {
+    if (!state.map) return;
+    
+    const level = state.map.getLevel();
+    const newDetailMode = level <= 10;
+    
+    if (newDetailMode !== state.detailMode) {
+      state.detailMode = newDetailMode;
+      if (state.detailMode && state.polygons.length === 0) {
+        // 상세 모드로 전환되고 폴리곤이 없으면 초기화
+        initPolygons();
+      }
+    }
   }
 
   function select(libraryId){
