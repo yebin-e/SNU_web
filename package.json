@@ -1,0 +1,28 @@
+{
+  "name": "webvisualize",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "next": "^15.4.6",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-vega": "^7.7.1",
+    "vega": "^5.33.0",
+    "vega-lite": "^5.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.2.1",
+    "@types/react": "19.1.10",
+    "typescript": "5.9.2"
+  }
+}
