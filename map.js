@@ -23,10 +23,7 @@ console.log('test');
     polygons: [],
     areas: [],
     detailMode: false,
-    customOverlay: null,
-    // 클러스터 관련 상태 추가
-    areaClusters: [],
-    clusterOverlays: []
+    customOverlay: null
   };
 
   function emit(event, payload){ (state.listeners[event]||[]).forEach(fn=>{ try{ fn(payload); }catch(_){} }); }
@@ -55,105 +52,10 @@ console.log('test');
     state.markers.forEach(m => {
       try {
         const size = applyZoomFactor(m.baseSize);
-        const image = new kakao.maps.MarkerImage('icon.png', new kakao.maps.Size(size, size), { offset: new kakao.maps.Point(Math.round(size/2), size-2) });
+        const image = new kakao.maps.MarkerImage('library-icon.svg', new kakao.maps.Size(size, size), { offset: new kakao.maps.Point(Math.round(size/2), size-2) });
         m.marker.setImage(image);
       } catch(_) {}
     });
-  }
-
-  // 구별 도서관 개수 계산
-  function calculateAreaLibraries(libraries) {
-    const areaCounts = {};
-    
-    libraries.forEach(lib => {
-      const address = lib.address || '';
-      // 주소에서 구 이름 추출 (예: "서울특별시 강남구 ..." -> "강남구")
-      const districtMatch = address.match(/([가-힣]+구)/);
-      if (districtMatch) {
-        const district = districtMatch[1];
-        areaCounts[district] = (areaCounts[district] || 0) + 1;
-      }
-    });
-    
-    return areaCounts;
-  }
-
-  // 구별 클러스터 생성
-  function createAreaClusters(libraries) {
-    const areaCounts = calculateAreaLibraries(libraries);
-    
-    // 기존 클러스터 제거
-    clearAreaClusters();
-    
-    state.areas.forEach(area => {
-      const count = areaCounts[area.name] || 0;
-      if (count > 0) {
-        const cluster = createClusterOverlay(area, count);
-        state.areaClusters.push(cluster);
-      }
-    });
-  }
-
-  // 클러스터 오버레이 생성
-  function createClusterOverlay(area, count) {
-    // 구의 중심점 계산
-    const center = calculateAreaCenter(area.path);
-    
-    // 도서관 개수에 따른 크기 클래스 결정
-    let sizeClass = '';
-    if (count <= 3) sizeClass = 'small';
-    else if (count >= 10) sizeClass = 'large';
-    
-    const clusterDiv = document.createElement('div');
-    clusterDiv.className = 'area-cluster';
-    clusterDiv.innerHTML = `
-      <div class="cluster-circle ${sizeClass}">
-        <span class="cluster-count">${count}</span>
-      </div>
-      <div class="cluster-label">${area.name}</div>
-    `;
-    
-    const overlay = new kakao.maps.CustomOverlay({
-      position: center,
-      content: clusterDiv,
-      yAnchor: 0.5,
-      xAnchor: 0.5,
-      zIndex: 10
-    });
-    
-    // 클러스터 클릭 이벤트
-    clusterDiv.addEventListener('click', () => {
-      // 해당 구로 확대
-      state.map.setLevel(10);
-      state.map.panTo(center);
-    });
-    
-    return overlay;
-  }
-
-  // 구의 중심점 계산
-  function calculateAreaCenter(path) {
-    if (!path || path.length === 0) {
-      return new kakao.maps.LatLng(37.5665, 126.9780);
-    }
-    
-    let sumLat = 0, sumLng = 0;
-    path.forEach(point => {
-      sumLat += point.getLat();
-      sumLng += point.getLng();
-    });
-    
-    return new kakao.maps.LatLng(sumLat / path.length, sumLng / path.length);
-  }
-
-  // 구별 클러스터 제거
-  function clearAreaClusters() {
-    state.areaClusters.forEach(cluster => {
-      try {
-        cluster.setMap(null);
-      } catch(_) {}
-    });
-    state.areaClusters = [];
   }
 
   function updateClusteringMode(){
@@ -168,7 +70,6 @@ console.log('test');
       markersOnly.forEach(m => { try{ m.setMap(state.map); }catch(_){} });
       return;
     }
-    
     if (level > 8) {
       // 레벨 8보다 클 때: 클러스터링 모드
       console.log('클러스터링 모드 활성화');
@@ -180,9 +81,6 @@ console.log('test');
       try{ state.clusterer.clear(); }catch(_){ }
       try{ state.clusterer.addMarkers(markersOnly); }catch(_){ }
       try{ state.clusterer.setMap(state.map); }catch(_){ }
-      
-      // 구별 클러스터 표시
-      showAreaClusters();
     } else {
       // 레벨 8 이하일 때: 개별 마커 표시
       console.log('개별 마커 모드 활성화');
@@ -193,28 +91,7 @@ console.log('test');
       markersOnly.forEach(m => { 
         try{ m.setMap(state.map); }catch(_){} 
       });
-      
-      // 구별 클러스터 숨기기
-      hideAreaClusters();
     }
-  }
-
-  // 구별 클러스터 표시
-  function showAreaClusters() {
-    state.areaClusters.forEach(cluster => {
-      try {
-        cluster.setMap(state.map);
-      } catch(_) {}
-    });
-  }
-
-  // 구별 클러스터 숨기기
-  function hideAreaClusters() {
-    state.areaClusters.forEach(cluster => {
-      try {
-        cluster.setMap(null);
-      } catch(_) {}
-    });
   }
 
   function init(containerId, options){
@@ -270,8 +147,6 @@ console.log('test');
     try{ state.clusterer && state.clusterer.setMap(null); }catch(_){}
     // 폴리곤 정리
     removePolygons();
-    // 구별 클러스터 정리
-    clearAreaClusters();
   }
 
   function render(libraries){
@@ -284,15 +159,13 @@ console.log('test');
         state.map.setLevel(state.options.level || 3);
         return;
       }
-      
-      // 구별 클러스터 생성
-      createAreaClusters(rows);
-      
-      // 반지름 스케일(px)
+      // 반지름 스케일(px) - 이용자 수에 따라 최대 1.5배까지 증가
       const maxVisitors = Math.max(1, rows.reduce((m,l)=>Math.max(m, Number(l.visitors)||0), 1));
       const baseScale = v => {
         const s = Math.sqrt(Math.max(0, Number(v)||0) / maxVisitors);
-        return Math.max(24, Math.round(6 + s*20)*2);
+        const baseSize = 14; // 기본 크기
+        const maxSize = Math.round(baseSize * 2); // 최대 1.5배
+        return Math.max(baseSize, Math.min(maxSize, Math.round(baseSize + s * (maxSize - baseSize))));
       };
 
       const bounds = new kakao.maps.LatLngBounds();
@@ -301,7 +174,7 @@ console.log('test');
         bounds.extend(pos);
         const baseSize = baseScale(d.visitors);
         const size = applyZoomFactor(baseSize);
-        const image = new kakao.maps.MarkerImage('icon.png', new kakao.maps.Size(size, size), { offset: new kakao.maps.Point(Math.round(size/2), size-2) });
+        const image = new kakao.maps.MarkerImage('library-icon.svg', new kakao.maps.Size(size, size), { offset: new kakao.maps.Point(Math.round(size/2), size-2) });
         const marker = new kakao.maps.Marker({ position: pos, image, zIndex: 2 });
         // 마커를 바로 지도에 표시하지 않고 상태에만 저장
 
@@ -326,7 +199,6 @@ console.log('test');
           // 필요시 중심만 약간 보정하려면 아래 주석을 켜세요
           // const sw = bounds.getSouthWest();
           // const ne = bounds.getNorthEast();
-          // const center = new kakao.maps.LatLng((sw.getLat()+ne.getLat())/2, (sw.getLng()+ne.getLng())/2);
           // const center = new kakao.maps.LatLng((sw.getLat()+ne.getLat())/2, (sw.getLng()+ne.getLng())/2);
           // state.map.setCenter(center);
           state.map.setLevel(state.options.level || 3);
