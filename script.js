@@ -7,7 +7,7 @@ const selectedSpaceCategories = new Set();
 const selectedElectronicCategories = new Set();
 const selectedComfortCategories = new Set();
 let selectedBookType = ''; // 'domestic' 또는 'foreign'
-let openNowOnly = false;
+let openNowOnly = false; // deprecated UI removed
 let sortKey = '';
 
 // 고급 필터 상태
@@ -349,10 +349,12 @@ function initializeIntroScreen() {
     if (subtitle) subtitle.style.transform = `translateY(${ty}px) scale(${sc})`;
     if (logo) logo.style.transform = `translateY(${ty}px) scale(${sc})`;
 
-    const zoomScale = 1 + scrollProgress * 4;
+    const zoomScale = 1 + scrollProgress * 1.8; // 사진 확대 감도 낮춤
     if (bg1){
-      bg1.style.transform = `scale(${zoomScale}) translateY(${scrollY * 0.3}px) rotateX(${scrollProgress * 5}deg)`;
-      bg1.style.filter = `brightness(${0.4 + scrollProgress * 0.3}) saturate(${1 + scrollProgress * 0.5})`;
+      bg1.style.transform = `scale(${zoomScale}) translateY(${scrollY * 0.18}px)`;
+      const fade = 1 - Math.min(scrollProgress * 1.2, 1); // 메뉴가 나타나기 전까지만 보이게 점점 사라짐
+      bg1.style.opacity = String(0.6 * fade);
+      bg1.style.filter = `saturate(${1 + scrollProgress * 0.2})`;
     }
     if (bg2){
       const p2 = Math.max(0, (scrollProgress - 0.3) / 0.7);
@@ -387,7 +389,8 @@ function initializeIntroScreen() {
   // 인트로 스크롤 진행도 → 문/바닥 애니메이션 업데이트
   function handleIntroScroll(){
     if (currentStep !== 'intro') return;
-    const total = Math.max(window.innerHeight * 2.2, 1); // 더 긴 거리에서 열리게
+    // 인트로(첫 화면) 높이까지만 효과 적용
+    const total = Math.max(window.innerHeight * 1.0, 1);
     const y = Math.max(0, Math.min(window.scrollY || window.pageYOffset || 0, total));
     const p = Math.min(y / total, 1);
     updateCinematic(p, y);
@@ -1520,7 +1523,7 @@ function initializeEventListeners() {
   document.getElementById('searchBtn').addEventListener('click', () => applyFilters());
   document.getElementById('searchInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') applyFilters(); });
   document.getElementById('districtFilter').addEventListener('change', () => applyFilters());
-  document.getElementById('openNowToggle').addEventListener('change', (e) => { openNowOnly = e.target.checked; applyFilters(); });
+  // openNowToggle removed from UI
   document.getElementById('sortSelect').addEventListener('change', (e) => { sortKey = e.target.value; applyFilters(); });
   document.querySelector('.close').addEventListener('click', closeModal);
   window.addEventListener('click', (e) => { if (e.target === document.getElementById('detailModal')) closeModal(); });
@@ -1538,13 +1541,7 @@ function initializeEventListeners() {
   });
   document.getElementById('subjectSort').addEventListener('change', (e) => { subjectSort = e.target.value; applyFilters(); });
 
-  // 뷰 전환
-  const viewBtn = document.getElementById('viewToggle');
-  if (viewBtn) viewBtn.addEventListener('click', () => {
-    const list = document.getElementById('libraryList');
-    list.classList.toggle('grid');
-    viewBtn.textContent = list.classList.contains('grid') ? '리스트 뷰' : '카드 뷰';
-  });
+  // 뷰 전환 버튼 제거됨: 리스트는 기본형으로 고정
 }
 
   // 쾌적함별 지도 필터링 함수
@@ -1675,25 +1672,26 @@ function setupCategoryChips() {
         selectedElectronicCategories.delete(value);
       }
       applyFilters();
-    } else if (type === 'space') {
-      // 공간 카테고리
+    } else if (type === 'study') {
+      // 공부 공간 카테고리
       btn.classList.toggle('active');
       if (btn.classList.contains('active')) {
-        selectedSpaceCategories.add(value);
+        if (!window.selectedStudyCategories) window.selectedStudyCategories = new Set();
+        window.selectedStudyCategories.add(value);
       } else {
-        selectedSpaceCategories.delete(value);
+        if (window.selectedStudyCategories) window.selectedStudyCategories.delete(value);
       }
       applyFilters();
     } else if (type === 'comfort') {
-      // 쾌적함 카테고리
-      btn.classList.toggle('active');
-      if (btn.classList.contains('active')) {
+      // 쾌적함 카테고리: 단일 선택만 허용
+      const comfortChips = document.querySelectorAll('[data-type="comfort"]');
+      comfortChips.forEach(chip => chip.classList.remove('active'));
+      selectedComfortCategories.clear();
+      if (btn) {
+        btn.classList.add('active');
         selectedComfortCategories.add(value);
-        // 쾌적함별 지도 필터링 적용
         filterLibrariesByComfort(value);
       } else {
-        selectedComfortCategories.delete(value);
-        // 선택 해제시 전체 도서관 표시
         filterLibrariesByComfort('total');
       }
       applyFilters();
@@ -1790,14 +1788,14 @@ function applyFilters() {
     });
   }
   
-  if (selectedSpaceCategories.size > 0) {
-    result = result.filter((l) => l.spaceCategories && l.spaceCategories.some((c) => selectedSpaceCategories.has(c)));
+  if (window.selectedStudyCategories && window.selectedStudyCategories.size > 0) {
+    result = result.filter((l) => l.studyCategories && l.studyCategories.some((c) => window.selectedStudyCategories.has(c)));
   }
   // 쾌적함 카테고리 필터
   if (selectedComfortCategories.size > 0) {
     result = result.filter((l) => selectedComfortCategories.has(l.comfortLevel));
   }
-  if (openNowOnly) result = result.filter(isOpenNow);
+  // openNowOnly filter removed (toggle deleted)
 
   // 고급 필터
   if (minSeatsTotal) result = result.filter((l) => (l.seatsTotal||0) >= Number(minSeatsTotal));
@@ -1899,7 +1897,7 @@ function createLibraryItem(library) {
   div.className = 'library-item';
   div.dataset.id = library.id;
   const totalHoldings = (library.holdingsDomestic||0) + (library.holdingsForeign||0);
-  const statusBadge = openNowOnly && isOpenNow(library) ? '<div class="library-status">지금 운영중</div>' : '';
+  const statusBadge = '';
   
   // 쾌적함 정보 표시
   const comfortInfo = library.comfortLevel && library.comfortLevel !== '정보없음' ? 

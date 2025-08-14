@@ -99,7 +99,7 @@
             </div>
         </div>
     </div>
-
+  
     <!-- 장르별 한눈에 보기 페이지 -->
     <div id="genrePage" class="genre-page" style="display: none;">
         <div class="genre-content">
@@ -320,12 +320,12 @@
                     </div>
                 </div>
                 <div class="category-group">
-                    <div class="category-title">공간</div>
-                    <div class="category-chips" id="spaceCategoryChips">
-                        <button class="chip" data-type="space" data-value="공부">공부하기 좋음</button>
-                        <button class="chip" data-type="space" data-value="휴식">휴식하기 좋음</button>
-                        <button class="chip" data-type="space" data-value="아이">어린이 친화적</button>
-                        <button class="chip" data-type="space" data-value="디지털">디지털/PC</button>
+                    <div class="category-title">공부 공간</div>
+                    <div class="category-chips" id="studyCategoryChips">
+                        <button class="chip" data-type="study" data-value="조용">조용한 공간</button>
+                        <button class="chip" data-type="study" data-value="테이블">테이블 넉넉</button>
+                        <button class="chip" data-type="study" data-value="룸">스터디룸</button>
+                        <button class="chip" data-type="study" data-value="콘센트">콘센트 많음</button>
                     </div>
                 </div>
                 <div class="category-group">
@@ -349,6 +349,7 @@
 
             <!-- 사이드바 -->
             <aside class="sidebar">
+                <div class="sidebar-card">
                 <div class="sidebar-header">
                     <h3>도서관 목록</h3>
                     <div class="filter-controls">
@@ -393,17 +394,11 @@
                             <option value="yearAsc">개관년도 오래된 순</option>
                         </select>
                     </div>
-                    <div class="control-row">
-                        <label class="switch">
-                            <input type="checkbox" id="openNowToggle">
-                            <span class="slider"></span>
-                        </label>
-                        <span class="switch-label">지금 운영중만</span>
-                    </div>
+                    
                 </div>
 
-                <div class="filter-section-title">고급 필터</div>
-                <div class="advanced-filters">
+                <div class="filter-section-title">상세 필터</div>
+                <div class="advanced-filters sidebar-section">
                     <div class="af-row">
                         <label>총 좌석 ≥</label>
                         <input type="number" id="minSeatsTotal" placeholder="예: 100">
@@ -447,9 +442,10 @@
                     </div>
                 </div>
                 <div class="stats-bar" id="statsBar"></div>
-                <div class="library-list-wrap">
-                    <button id="viewToggle" class="view-toggle pinned" title="리스트/카드 뷰 전환">카드 뷰</button>
+                <div class="library-list-wrap sidebar-section">
+                    
                     <div class="library-list" id="libraryList"></div>
+                </div>
                 </div>
             </aside>
         </main>
