@@ -10,14 +10,8 @@ let selectedBookType = ''; // 'domestic' 또는 'foreign'
 let openNowOnly = false; // deprecated UI removed
 let sortKey = '';
 
-// 고급 필터 상태
-let minSeatsTotal = '';
-let minSeatsChild = '';
-let minSeatsSenior = '';
-let minEUse = '';
-let hasChildrenRoom = false;
-window.ageFocus = '';
-let subjectSort = '';
+  // 고급 필터 상태
+  window.ageFocus = '';
 
 // 장르별 필터링 상태
 let selectedGenre = '';
@@ -83,6 +77,23 @@ function truthyFromString(v){
   if (!v) return false;
   const s = String(v);
   return /(y|Y|true|유|있|보유)/.test(s);
+}
+
+// 좌석혼잡도 계산 함수
+function getCrowdingLevel(r) {
+  const totalMembers = toNumber(r['연령별회원등록자수_어린이']) + 
+                      toNumber(r['연령별회원등록자수_청소년']) + 
+                      toNumber(r['연령별회원등록자수_성인']);
+  const totalSeats = toNumber(r['좌석수_총좌석수']);
+  
+  if (totalSeats === 0) return '정보없음';
+  
+  const crowdingRatio = totalMembers / totalSeats;
+  
+  if (crowdingRatio >= 3.0) return '매우혼잡';
+  if (crowdingRatio >= 2.0) return '혼잡';
+  if (crowdingRatio >= 1.0) return '보통';
+  return '여유';
 }
 
 function mapCsvRowToLibrary(r, id){
@@ -196,6 +207,8 @@ function mapCsvRowToLibrary(r, id){
     popularBooks: [],
     facilities: [],
     nearby: { residential: [], commercial: [] },
+    // 좌석혼잡도 계산
+    crowdingLevel: getCrowdingLevel(r),
     // 국내서 장르별 데이터
     '국내서_총류': toNumber(r['국내서_총류']),
     '국내서_철학': toNumber(r['국내서_철학']),
@@ -731,18 +744,7 @@ function initializeIntroScreen() {
     // 어린이실 보유 도서관 필터링
     const childrenLibraries = allLibs.filter(lib => lib.hasChildrenRoom);
     
-    // 통계 계산
-    const childrenLibraryCount = childrenLibraries.length;
-    const avgChildSeats = childrenLibraries.length > 0 ? 
-      Math.round(childrenLibraries.reduce((sum, lib) => sum + (lib.seatsChild || 0), 0) / childrenLibraries.length) : 0;
-    const totalChildrenHoldings = childrenLibraries.reduce((sum, lib) => sum + calculateChildrenHoldings(lib), 0);
-    const avgChildrenHoldings = childrenLibraries.length > 0 ? 
-      Math.round(totalChildrenHoldings / childrenLibraries.length) : 0;
-    
-    // 통계 표시
-    document.getElementById('childrenLibraryCount').textContent = childrenLibraryCount;
-    document.getElementById('avgChildSeats').textContent = avgChildSeats;
-    document.getElementById('avgChildrenHoldings').textContent = avgChildrenHoldings.toLocaleString();
+
     
     // 도서관 목록 표시
     const listContainer = document.getElementById('childrenLibraryList');
@@ -1529,17 +1531,10 @@ function initializeEventListeners() {
   window.addEventListener('click', (e) => { if (e.target === document.getElementById('detailModal')) closeModal(); });
 
   // 고급 필터 이벤트
-  document.getElementById('minSeatsTotal').addEventListener('input', (e) => { minSeatsTotal = e.target.value; applyFilters(); });
-  document.getElementById('minSeatsChild').addEventListener('input', (e) => { minSeatsChild = e.target.value; applyFilters(); });
-  document.getElementById('minSeatsSenior').addEventListener('input', (e) => { minSeatsSenior = e.target.value; applyFilters(); });
-  document.getElementById('minEUse').addEventListener('input', (e) => { minEUse = e.target.value; applyFilters(); });
-  document.getElementById('hasChildrenRoom').addEventListener('change', (e) => { hasChildrenRoom = e.target.checked; applyFilters(); });
   document.getElementById('ageFocus').addEventListener('change', (e) => { 
-    ageFocus = e.target.value; 
     window.ageFocus = e.target.value; // 전역 변수로 설정
     applyFilters(); 
   });
-  document.getElementById('subjectSort').addEventListener('change', (e) => { subjectSort = e.target.value; applyFilters(); });
 
   // 뷰 전환 버튼 제거됨: 리스트는 기본형으로 고정
 }
@@ -1571,7 +1566,6 @@ function initializeEventListeners() {
     // 도서관 목록도 함께 업데이트
     libraries = filteredLibraries;
     displayLibraries();
-    renderStats(filteredLibraries);
   }
 
   // 장르별 지도 필터링 함수
@@ -1587,7 +1581,6 @@ function initializeEventListeners() {
     // 도서관 목록도 전체로 복원
     libraries = allLibraries;
     displayLibraries();
-    renderStats(allLibraries);
     return;
   }
   
@@ -1633,7 +1626,6 @@ function initializeEventListeners() {
   // 도서관 목록도 함께 업데이트
   libraries = filteredLibraries;
   displayLibraries();
-  renderStats(filteredLibraries);
 }
 
 function setupCategoryChips() {
@@ -1672,16 +1664,16 @@ function setupCategoryChips() {
         selectedElectronicCategories.delete(value);
       }
       applyFilters();
-    } else if (type === 'study') {
-      // 공부 공간 카테고리
-      btn.classList.toggle('active');
-      if (btn.classList.contains('active')) {
-        if (!window.selectedStudyCategories) window.selectedStudyCategories = new Set();
-        window.selectedStudyCategories.add(value);
-      } else {
-        if (window.selectedStudyCategories) window.selectedStudyCategories.delete(value);
-      }
-      applyFilters();
+          } else if (type === 'study') {
+        // 좌석혼잡도 카테고리
+        btn.classList.toggle('active');
+        if (btn.classList.contains('active')) {
+          if (!window.selectedStudyCategories) window.selectedStudyCategories = new Set();
+          window.selectedStudyCategories.add(value);
+        } else {
+          if (window.selectedStudyCategories) window.selectedStudyCategories.delete(value);
+        }
+        applyFilters();
     } else if (type === 'comfort') {
       // 쾌적함 카테고리: 단일 선택만 허용
       const comfortChips = document.querySelectorAll('[data-type="comfort"]');
@@ -1789,7 +1781,7 @@ function applyFilters() {
   }
   
   if (window.selectedStudyCategories && window.selectedStudyCategories.size > 0) {
-    result = result.filter((l) => l.studyCategories && l.studyCategories.some((c) => window.selectedStudyCategories.has(c)));
+    result = result.filter((l) => l.crowdingLevel && window.selectedStudyCategories.has(l.crowdingLevel));
   }
   // 쾌적함 카테고리 필터
   if (selectedComfortCategories.size > 0) {
@@ -1797,13 +1789,7 @@ function applyFilters() {
   }
   // openNowOnly filter removed (toggle deleted)
 
-  // 고급 필터
-  if (minSeatsTotal) result = result.filter((l) => (l.seatsTotal||0) >= Number(minSeatsTotal));
-  if (minSeatsChild) result = result.filter((l) => (l.seatsChild||0) >= Number(minSeatsChild));
-  if (minSeatsSenior) result = result.filter((l) => (l.seatsSeniorDisabled||0) >= Number(minSeatsSenior));
-  if (minEUse) result = result.filter((l) => (l.eUseTotal||0) >= Number(minEUse));
-  if (hasChildrenRoom) result = result.filter((l) => !!l.hasChildrenRoom);
-  if (ageFocus) {
+  if (window.ageFocus) {
     // 연령별 회원등록자 수 비율 계산 및 상위 10개 선택
     const ageRatios = result.map((l) => {
       const childMembers = l.연령별회원등록자수_어린이 || 0;
@@ -1812,11 +1798,11 @@ function applyFilters() {
       const totalMembers = childMembers + teenMembers + adultMembers;
       
       let ratio = 0;
-      if (ageFocus === 'child') {
+      if (window.ageFocus === 'child') {
         ratio = totalMembers > 0 ? childMembers / totalMembers : 0;
-      } else if (ageFocus === 'teen') {
+      } else if (window.ageFocus === 'teen') {
         ratio = totalMembers > 0 ? teenMembers / totalMembers : 0;
-      } else if (ageFocus === 'adult') {
+      } else if (window.ageFocus === 'adult') {
         ratio = totalMembers > 0 ? adultMembers / totalMembers : 0;
       }
       
@@ -1824,7 +1810,7 @@ function applyFilters() {
     });
     
     // 디버깅: 비율 계산 결과 확인
-    console.log('Age focus:', ageFocus);
+    console.log('Age focus:', window.ageFocus);
     console.log('Age ratios (top 5):', ageRatios
       .sort((a, b) => b.ratio - a.ratio)
       .slice(0, 5)
@@ -1855,21 +1841,17 @@ function applyFilters() {
     default: break;
   }
 
-  // 주제 정렬(선택된 주제 보유량 큰 순) - CSV에서는 상위 주제 계산 결과(bookCategories)로 가중
-  if (subjectSort) {
-    result.sort((a,b) => (b.bookCategories?.includes(subjectSort) ? 1 : 0) - (a.bookCategories?.includes(subjectSort) ? 1 : 0));
-  }
+
 
   libraries = result;
   
   // ageFocus로 필터된 경우 전역 변수에 저장 (팝업에서 순위 계산용)
-  if (ageFocus) {
+  if (window.ageFocus) {
     window.filteredLibraries = result;
   } else {
     window.filteredLibraries = null;
   }
   displayLibraries();
-  renderStats(result);
   // 지도 렌더 (파트너 모듈)
   if (window.MapView) MapView.render(libraries);
 }
@@ -2000,46 +1982,7 @@ function showLibraryDetail(library) {
 
 function closeModal() { const mc = document.querySelector('.modal-content'); if (mc) mc.classList.remove('show'); setTimeout(()=>{ document.getElementById('detailModal').style.display='none'; },150); }
 
-// 대시보드 통계 렌더링 + 카운트업
-function renderStats(data){
-  const statsBar = document.getElementById('statsBar');
-  const n = data.length;
-  const avgSeats = Math.round(data.reduce((s,l)=>s+(l.seatsTotal||0),0)/(n||1));
-  const avgHoldings = Math.round(data.reduce((s,l)=>s+((l.holdingsDomestic||0)+(l.holdingsForeign||0)),0)/(n||1));
-  const totalLoans = data.reduce((s,l)=>s+(l.loansPrintTotal||0),0);
-  // 쾌적함 통계 계산
-  const comfortStats = data.reduce((acc, lib) => {
-    if (lib.comfortLevel && lib.comfortLevel !== '정보없음') {
-      acc[lib.comfortLevel] = (acc[lib.comfortLevel] || 0) + 1;
-    }
-    return acc;
-  }, {});
-  
-  const mostComfortable = Object.entries(comfortStats).sort((a, b) => b[1] - a[1])[0];
-  const comfortLabel = mostComfortable ? mostComfortable[0] : '정보없음';
-  const comfortCount = mostComfortable ? mostComfortable[1] : 0;
-  
-  statsBar.innerHTML = `
-    <div class="stat-card"><div class="stat-title">총 도서관 수</div><div class="stat-value" data-target="${n}">0</div></div>
-    <div class="stat-card"><div class="stat-title">평균 좌석 수</div><div class="stat-value" data-target="${avgSeats}">0</div></div>
-    <div class="stat-card"><div class="stat-title">평균 보유 자료</div><div class="stat-value" data-target="${avgHoldings}">0</div></div>
-    <div class="stat-card"><div class="stat-title">가장 많은 쾌적함</div><div class="stat-value" data-target="${comfortCount}">0</div><div class="stat-subtitle">${comfortLabel}</div></div>
-  `;
-  // 카운트업 애니메이션
-  document.querySelectorAll('#statsBar .stat-value').forEach(el => {
-    const target = Number(el.dataset.target)||0;
-    const duration = 700; // ms
-    const start = performance.now();
-    const formatter = new Intl.NumberFormat();
-    function tick(now){
-      const p = Math.min((now-start)/duration,1);
-      const val = Math.floor(p*target);
-      el.textContent = formatter.format(val) + (el.previousSibling?.textContent?.includes('수') ? (el.previousSibling.textContent.includes('도서관') ? '': '') : '');
-      if (p<1) requestAnimationFrame(tick); else el.textContent = formatter.format(target) + ('');
-    }
-    requestAnimationFrame(tick);
-  });
-}
+
 
 // 차트 렌더링
 let chartAge, chartUsage, chartHoldings, chartSubjectTop;
