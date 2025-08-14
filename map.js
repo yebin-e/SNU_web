@@ -52,7 +52,7 @@ console.log('test');
     state.markers.forEach(m => {
       try {
         const size = applyZoomFactor(m.baseSize);
-        const image = new kakao.maps.MarkerImage('library-icon.svg', new kakao.maps.Size(size, size), { offset: new kakao.maps.Point(Math.round(size/2), size-2) });
+        const image = new kakao.maps.MarkerImage('icon.png', new kakao.maps.Size(size, size), { offset: new kakao.maps.Point(Math.round(size/2), size-2) });
         m.marker.setImage(image);
       } catch(_) {}
     });
@@ -153,6 +153,12 @@ console.log('test');
     ensureKakaoLoaded(()=>{
       if (!state.map) init(state.containerId, state.options);
       clear();
+      
+      // 폴리곤 초기화 (처음부터 활성화)
+      if (state.areas.length === 0) {
+        initPolygons();
+      }
+      
       const rows = Array.isArray(libraries) ? libraries.filter(l=>l.lat&&l.lng) : [];
       if (rows.length === 0){
         state.map.setCenter(new kakao.maps.LatLng(37.5665, 126.9780));
@@ -174,7 +180,7 @@ console.log('test');
         bounds.extend(pos);
         const baseSize = baseScale(d.visitors);
         const size = applyZoomFactor(baseSize);
-        const image = new kakao.maps.MarkerImage('library-icon.svg', new kakao.maps.Size(size, size), { offset: new kakao.maps.Point(Math.round(size/2), size-2) });
+        const image = new kakao.maps.MarkerImage('icon.png', new kakao.maps.Size(size, size), { offset: new kakao.maps.Point(Math.round(size/2), size-2) });
         const marker = new kakao.maps.Marker({ position: pos, image, zIndex: 2 });
         // 마커를 바로 지도에 표시하지 않고 상태에만 저장
 
@@ -295,26 +301,7 @@ console.log('test');
     
     state.polygons.push(polygon);
 
-    // 마우스 오버 이벤트
-    kakao.maps.event.addListener(polygon, 'mouseover', function (mouseEvent) {
-      polygon.setOptions({fillColor: '#09f'});
-      state.customOverlay.setContent('<div class="area">' + area.name + '</div>');
-      state.customOverlay.setPosition(mouseEvent.latLng);
-      state.customOverlay.setMap(state.map);
-    });
-
-    // 마우스 이동 이벤트
-    kakao.maps.event.addListener(polygon, 'mousemove', function (mouseEvent) {
-      state.customOverlay.setPosition(mouseEvent.latLng);
-    });
-
-    // 마우스 아웃 이벤트
-    kakao.maps.event.addListener(polygon, 'mouseout', function () {
-      polygon.setOptions({fillColor: '#fff'});
-      state.customOverlay.setMap(null);
-    });
-
-    // 클릭 이벤트
+    // 클릭 이벤트만 유지
     kakao.maps.event.addListener(polygon, 'click', function (mouseEvent) {
       if (!state.detailMode) {
         state.map.setLevel(10);
