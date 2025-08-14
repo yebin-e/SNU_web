@@ -1663,3 +1663,53 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-
 .ko-popup .btn{padding:.35rem .55rem;border:1px solid var(--border);background:#fff;border-radius:8px;cursor:pointer;font-size:.85rem}
 .ko-popup .btn.primary{background:#8b5e3c;color:#fff;border-color:#8b5e3c}
 }
+
+.emoji-character {
+    font-size: 28px;
+    line-height: 1;
+    animation-fill-mode: forwards;
+    opacity: 0;
+    transform: translateY(40px);
+    pointer-events: none;
+  }
+  
+@keyframes runAndStand {
+    0% {
+      opacity: 0;
+      transform: translateY(40px) scale(0.8);
+    }
+    60% {
+      opacity: 1;
+      transform: translateY(-10px) scale(1.2);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0px) scale(1);
+    }
+  }
+
+  .character-wrapper {
+    position: absolute;
+    z-index: 999;
+    will-change: transform;
+  }
+  
+  .run-character img {
+    animation: bounce-run 0.4s infinite;
+  }
+  
+  .walk-character img {
+    animation: bounce-walk 1s infinite;
+  }
+  
+  @keyframes bounce-run {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  
+  @keyframes bounce-walk {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+  
+  

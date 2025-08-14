@@ -5,7 +5,7 @@
 // - MapView.select(libraryId)
 // - MapView.clear()
 // - MapView.on(event, handler) // 'markerClick', 'markerHover'
-console.log('test');
+
 (function(global){
   const state = {
     map: null,
@@ -25,6 +25,15 @@ console.log('test');
     detailMode: false,
     customOverlay: null
   };
+
+  function getAgeEmoji(age) {
+    switch (age) {
+      case '어린이': return '👶';
+      case '청소년': return '🧒';
+      case '성인': return '🧑';
+      default: return '📚';
+    }
+  }
 
   function emit(event, payload){ (state.listeners[event]||[]).forEach(fn=>{ try{ fn(payload); }catch(_){} }); }
 
@@ -180,6 +189,71 @@ console.log('test');
         const image = new kakao.maps.MarkerImage('icon.png', new kakao.maps.Size(size, size), { offset: new kakao.maps.Point(Math.round(size/2), size-2) });
         const marker = new kakao.maps.Marker({ position: pos, image, zIndex: 2 });
         // 마커를 바로 지도에 표시하지 않고 상태에만 저장
+
+        if (!window.ageFocus) {
+          return; // 캐릭터도 마커도 만들지 않음
+        }
+        // 마커를 생성하고 위치 설정한 이후에 추가
+        const emoji = getAgeEmoji(window.ageFocus || '');  // 전역 상태 참조
+        const emojiDiv = document.createElement('div');
+        emojiDiv.className = 'emoji-character';
+        emojiDiv.innerText = emoji;
+
+        emojiDiv.style.position = 'relative';
+        emojiDiv.style.animation = 'runAndStand 0.8s ease-out';
+        const mapContainer = document.getElementById(state.containerId);
+        const proj = state.map.getProjection();
+        const targetPoint = proj.containerPointFromCoords(pos);
+
+        // 랜덤 시작점 (지도 바깥쪽)
+        const startX = Math.random() > 0.5 ? -100 : mapContainer.offsetWidth + 100;
+        const startY = Math.random() * mapContainer.offsetHeight;
+
+        // 캐릭터 이미지 결정
+        const age = window.ageFocus || '';
+        let imagePath = '';
+        let animClass = '';
+
+        if (age === '어린이') {
+          imagePath = 'img/child_run.gif';
+          animClass = 'run-character';
+        } else {
+          imagePath = 'img/adult_walk.gif';
+          animClass = 'walk-character';
+        }
+
+        // DOM 생성
+        const charDiv = document.createElement('div');
+        charDiv.className = `character-wrapper ${animClass}`;
+        charDiv.style.left = `${startX}px`;
+        charDiv.style.top = `${startY}px`;
+
+        const img = document.createElement('img');
+        img.src = imagePath;
+        img.style.width = '36px';
+        img.style.height = 'auto';
+        img.style.pointerEvents = 'none';
+
+        charDiv.appendChild(img);
+        mapContainer.appendChild(charDiv);
+
+        // 이동 애니메이션
+        setTimeout(() => {
+          charDiv.style.transform = `translate(${targetPoint.x - startX}px, ${targetPoint.y - startY}px)`;
+        }, 100); // 다음 프레임에 실행
+
+        // 위치 고정
+        charDiv.style.position = 'absolute';
+        charDiv.style.transition = age === '어린이' ? 'transform 1.2s ease-out' : 'transform 2.4s ease-in';
+
+        const emojiOverlay = new kakao.maps.CustomOverlay({
+          content: emojiDiv,
+          position: pos,
+          yAnchor: 1.2,
+          xAnchor: 0.5,
+          zIndex: 4
+        });
+        emojiOverlay.setMap(state.map);
 
         kakao.maps.event.addListener(marker, 'mouseover', () => showHoverCard(d, pos));
         kakao.maps.event.addListener(marker, 'mouseout', hideHoverCard);
