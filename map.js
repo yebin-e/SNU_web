@@ -110,12 +110,78 @@
     // 폴리곤은 제거하지 않음 (투명도 유지)
   }
 
+  // 쾌적함 필터 함수 (도서관 면적 / 이용자 수 비율 기준)
+  function getComfortLevel(library) {
+    const area = Number(library.area) || 0;
+    const visitors = Number(library.visitors) || 1; // 0으로 나누기 방지
+    const ratio = area / visitors;
+    
+    // 비율에 따른 4개 그룹 분류 (실제 데이터에 맞게 조정)
+    let comfortLevel;
+    if (ratio >= 0.02) {
+      comfortLevel = '매우좋음'; // 매우 쾌적함
+    } else if (ratio >= 0.01) {
+      comfortLevel = '좋음'; // 쾌적함
+    } else if (ratio >= 0.005) {
+      comfortLevel = '보통'; // 보통
+    } else {
+      comfortLevel = '좁음'; // 좁음
+    }
+    
+    return comfortLevel;
+  }
+
   function render(libraries){
     ensureKakaoLoaded(()=>{
       if (!state.map) init(state.containerId, state.options);
       clear();
+      
+      // 현재 도서관 데이터 저장 (필터 재적용을 위해)
+      window.currentLibraries = libraries;
+      
+      // 필터가 설정되어 있으면 자동으로 다시 렌더링
+      if (window.comfortFilter && window.comfortFilter !== '' && window.comfortFilter !== null) {
+        // 필터가 설정된 상태에서 render가 호출되면 필터링된 결과로 렌더링
+      }
   
-      const rows = Array.isArray(libraries) ? libraries.filter(l => l.lat && l.lng) : [];
+      // 쾌적함 필터 적용
+      let filteredLibraries = Array.isArray(libraries) ? libraries.filter(l => l.lat && l.lng) : [];
+      
+      console.log('=== 필터링 시작 ===');
+      console.log('원본 도서관 수:', libraries.length);
+      console.log('좌표 있는 도서관 수:', filteredLibraries.length);
+      console.log('현재 comfortFilter:', window.comfortFilter);
+      
+      if (window.comfortFilter && window.comfortFilter !== '' && window.comfortFilter !== null) {
+        // 필터 값이 배열인 경우 첫 번째 요소 사용
+        let filterValue = window.comfortFilter;
+        if (Array.isArray(window.comfortFilter)) {
+          filterValue = window.comfortFilter[0]?.comfortLevel || window.comfortFilter[0];
+        }
+        
+        console.log('실제 필터 값:', filterValue);
+        
+        // 필터링 전 통계
+        const beforeStats = {};
+        filteredLibraries.forEach(library => {
+          const comfortLevel = getComfortLevel(library);
+          beforeStats[comfortLevel] = (beforeStats[comfortLevel] || 0) + 1;
+        });
+        console.log('필터링 전 분포:', beforeStats);
+        
+        filteredLibraries = filteredLibraries.filter(library => {
+          const comfortLevel = getComfortLevel(library);
+          const matches = comfortLevel === filterValue;
+          return matches;
+        });
+        
+        console.log('필터링 후 도서관 수:', filteredLibraries.length);
+        console.log('=== 필터링 완료 ===');
+      }
+      
+      const rows = filteredLibraries;
+      console.log('최종 렌더링할 도서관 수:', rows.length); // 디버깅
+      
       if (rows.length === 0){
         state.map.setCenter(new kakao.maps.LatLng(37.5665, 126.9780));
         state.map.setLevel(8);
@@ -544,5 +610,22 @@
     state.listeners[event].push(handler);
   }
 
-  global.MapView = { init, render, select, clear, on, loadInitialPolygons };
+  // 쾌적함 필터 설정 함수
+  function setComfortFilter(filterValue) {
+    window.comfortFilter = filterValue;
+    // script.js에서 render를 호출하도록 함
+  }
+
+  // script.js와 연동을 위한 함수
+  function showFilteredLibraries(comfortLevel) {
+    setComfortFilter(comfortLevel);
+  }
+
+  // 모든 도서관 표시 함수
+  function showAllLibraries() {
+    window.comfortFilter = null;
+    // script.js에서 render를 호출하도록 함
+  }
+
+  global.MapView = { init, render, select, clear, on, loadInitialPolygons, setComfortFilter, showFilteredLibraries, showAllLibraries };
 })(window);
