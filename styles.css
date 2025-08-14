@@ -363,9 +363,14 @@ body {
 /* 장르별 한눈에 보기 페이지 */
 .genre-page { position: relative; width: 100%; min-height: 100vh; background: transparent; }
 
-.genre-content { max-width: 1200px; margin: 0 auto; padding: 2rem; color: #ffffff; }
+.genre-content { max-width: 1200px; margin: 0 auto; padding: 2rem; color: #111827; }
 
-.genre-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid rgba(255,255,255,0.25); }
+/* 장르 페이지 상단 소개 박스 흰색 카드화 */
+.genre-page .info-section { background:#ffffff; border:1px solid rgba(0,0,0,0.08); border-radius:15px; padding:2rem; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+.genre-page .info-section h2 { color:#111827 }
+.genre-page .info-section p { color:#374151 }
+
+.genre-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #3b82f6; }
 .genre-header h1 { color: #ffffff; }
 
 .genre-header h1 {
@@ -379,7 +384,7 @@ body {
     gap: 2rem;
 }
 
-.genre-tabs-container { background: rgba(255,255,255,0.06); border-radius: 15px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+.genre-tabs-container { background: #ffffff; border-radius: 15px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 
 .genre-tabs {
     display: flex;
@@ -388,11 +393,11 @@ body {
     justify-content: center;
 }
 
-.genre-tab { padding: 0.8rem 1.2rem; border: 2px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.08); color: #ffffff; border-radius: 25px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; font-size: 0.9rem; }
+.genre-tab { padding: 0.8rem 1.2rem; border: 2px solid #3b82f6; background: #ffffff; color: #2563eb; border-radius: 25px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; font-size: 0.9rem; }
 
-.genre-tab:hover { background: rgba(255,255,255,0.2); color: #ffffff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.35); }
+.genre-tab:hover { background: #3b82f6; color: #ffffff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59,130,246,0.35); }
 
-.genre-tab.active { background: rgba(59,130,246,0.85); color: #ffffff; box-shadow: 0 4px 12px rgba(59,130,246,0.35); border-color: transparent; }
+.genre-tab.active { background: #2563eb; color: #ffffff; box-shadow: 0 4px 12px rgba(59,130,246,0.35); border-color: transparent; }
 
 
 
@@ -404,14 +409,9 @@ body {
     margin-top: 2rem;
 }
 
-.ranking-category {
-    background: white;
-    border-radius: 15px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 12px rgba(139, 94, 60, 0.1);
-}
+.ranking-category { background: #ffffff; border-radius: 15px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
 
-.ranking-category h3 { color: #ffffff; font-size: 1.2rem; margin-bottom: 1rem; text-align: center; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 0.5rem; }
+.ranking-category h3 { color: #111827; font-size: 1.2rem; margin-bottom: 1rem; text-align: center; border-bottom: 2px solid #3b82f6; padding-bottom: 0.5rem; }
 
 .ranking-tabs {
     display: flex;
@@ -421,11 +421,11 @@ body {
     justify-content: center;
 }
 
-.ranking-tab { padding: 0.5rem 1rem; border: 1px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.08); color: #ffffff; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; font-size: 0.8rem; }
+.ranking-tab { padding: 0.5rem 1rem; border: 1px solid #3b82f6; background: #ffffff; color: #2563eb; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; font-size: 0.8rem; }
 
-.ranking-tab:hover { background: rgba(255,255,255,0.2); color: #ffffff; transform: translateY(-1px); }
+.ranking-tab:hover { background: #3b82f6; color: #ffffff; transform: translateY(-1px); }
 
-.ranking-tab.active { background: rgba(59,130,246,0.8); color: #ffffff; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35); border-color: transparent; }
+.ranking-tab.active { background: #2563eb; color: #ffffff; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35); border-color: transparent; }
 
 .ranking-list {
     display: flex;
@@ -435,26 +435,13 @@ body {
     overflow-y: auto;
 }
 
-.ranking-list::-webkit-scrollbar {
-    width: 6px;
-}
-
-.ranking-list::-webkit-scrollbar-track {
-    background: #f0e6d8;
-    border-radius: 3px;
-}
-
-.ranking-list::-webkit-scrollbar-thumb {
-    background: #8b5e3c;
-    border-radius: 3px;
-}
+.ranking-list::-webkit-scrollbar { width: 6px; }
+.ranking-list::-webkit-scrollbar-track { background: #dbeafe; border-radius: 3px; }
+.ranking-list::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
 
 .ranking-item { display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem; background: rgba(255,255,255,0.06); border-radius: 8px; border-left: 3px solid rgba(59,130,246,0.8); transition: all 0.3s ease; }
 
-.ranking-item:hover {
-    background: #f0e6d8;
-    transform: translateX(3px);
-}
+.ranking-item:hover { background: rgba(59,130,246,0.12); transform: translateX(3px); }
 
 .ranking-number { font-size: 1rem; font-weight: bold; color: #ffffff; min-width: 30px; text-align: center; }
 
@@ -475,8 +462,8 @@ body {
     pointer-events: none;
 }
 
-.children-content { max-width: 1000px; margin: 0 auto; padding: 2rem; color: #ffffff; }
-.children-content h2, .children-content h3 { color:#ffffff }
+.children-content { max-width: 1000px; margin: 0 auto; padding: 2rem; color: #e5e7eb; }
+.children-content h2, .children-content h3 { color:#e5e7eb }
 .children-content p, .children-content li, .children-content .stat-label { color:#e5e7eb }
 .children-content a { color:#93c5fd }
 
@@ -504,7 +491,9 @@ body {
 
 .children-header h1 { font-size: 2rem; margin: 0; color: #ffffff; }
 
-.info-section { background: rgba(255, 255, 255, 0.06); padding: 2rem; border-radius: 15px; margin-bottom: 2rem; border: 1px solid rgba(255,255,255,0.2); }
+.info-section { background: #ffffff; padding: 2rem; border-radius: 15px; margin-bottom: 2rem; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 4px 12px rgba(0,0,0,0.08); color:#2563eb }
+.children-main .info-section h2 { color:#0f172a }
+.children-main .info-section p { color:#0f172a }
 
 .children-stats {
     display: grid;
@@ -513,72 +502,52 @@ body {
     margin-bottom: 2rem;
 }
 
-.children-stats .stat-card { background: rgba(255, 255, 255, 0.06); padding: 1.5rem; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
+.children-stats .stat-card { background: #ffffff; padding: 1.5rem; border-radius: 12px; text-align: center; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 4px 12px rgba(0,0,0,0.08); color:#2563eb }
 
-.stat-number { font-size: 2rem; font-weight: bold; color: #ffffff; margin-bottom: 0.5rem; }
+.stat-number { font-size: 2rem; font-weight: bold; color: #2563eb; margin-bottom: 0.5rem; }
 
 .stat-label {
     font-size: 0.9rem;
     opacity: 0.8;
 }
 
-/* 어린이 도서관 목록 섹션 */
-.children-library-section { background: rgba(255, 255, 255, 0.06); border-radius: 15px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 2rem; }
+/* 어린이 통계 카드 라벨을 파란색으로 가독성 높임 */
+.children-stats .stat-label { color: #2563eb; opacity: 0.9; }
 
-.children-library-section h3 { margin-top: 0; margin-bottom: 1rem; color: #ffffff; font-size: 1.1rem; }
+/* 어린이 도서관 목록 섹션 */
+.children-library-section { background: #ffffff; border-radius: 15px; padding: 1.5rem; border: 1px solid rgba(0,0,0,0.08); margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); color:#2563eb }
+
+.children-library-section h3 { margin-top: 0; margin-bottom: 1rem; color: #0f172a; font-size: 1.1rem; }
+.children-library-section .library-name { color: #0f172a; }
+.children-library-section .library-info { color: #1f2937; }
+.children-library-section .library-seats { color: #1f2937; }
 
 .children-library-list { margin-top: 0.5rem; }
 
 /* 간단한 어린이 도서관 목록 아이템 */
-.children-library-simple-item { display: flex; align-items: center; padding: 0.8rem 1rem; margin: 0.5rem 0; background: rgba(148,163,184,0.14); border-radius: 10px; border: 1px solid rgba(148,163,184,0.35); cursor: pointer; transition: all 0.3s ease; gap: 1rem; }
+.children-library-simple-item { display: flex; align-items: center; padding: 0.8rem 1rem; margin: 0.5rem 0; background: #ffffff; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); cursor: pointer; transition: all 0.3s ease; gap: 1rem; }
 
 .children-library-simple-item:hover { background: rgba(148,163,184,0.22); border-color: rgba(148,163,184,0.55); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35); }
 
-.library-rank { background: rgba(255,255,255,0.9); color: #0f172a; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; flex-shrink: 0; }
+.library-rank { background: linear-gradient(135deg, #3b82f6, #60a5fa); color: #ffffff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; flex-shrink: 0; box-shadow: 0 2px 6px rgba(59,130,246,0.3); }
 
-.library-name { flex: 1; font-weight: 600; color: #ffffff; font-size: 0.95rem; }
+.library-name { flex: 1; font-weight: 600; color: #0f172a; font-size: 0.95rem; }
 
-.library-seats { color: #e5e7eb; font-size: 0.85rem; font-weight: 500; flex-shrink: 0; }
+.library-seats { color: #1f2937; font-size: 0.85rem; font-weight: 500; flex-shrink: 0; }
 
 /* 어린이 인쇄자료 장르별 대출 랭킹 섹션 */
-.children-genre-section { background: rgba(255, 255, 255, 0.06); border-radius: 15px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 2rem; }
+.children-genre-section { background: #ffffff; border-radius: 15px; padding: 1.5rem; border: 1px solid rgba(0,0,0,0.08); margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); color:#2563eb }
 
-.children-genre-section h3 { margin-top: 0; margin-bottom: 1rem; color: #ffffff; font-size: 1.1rem; }
+.children-genre-section h3 { margin-top: 0; margin-bottom: 1rem; color: #0f172a; font-size: 1.1rem; }
 
 /* 장르 탭 스타일 */
-.genre-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid rgba(139, 94, 60, 0.2);
-}
+.genre-tabs { display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid #3b82f6 }
 
-.genre-tab {
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(139, 94, 60, 0.3);
-    color: #5a3d26;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 0.85rem;
-    font-weight: 500;
-}
+.genre-tab { background:#ffffff; border:1px solid #3b82f6; color:#2563eb; padding:.5rem 1rem; border-radius:20px; cursor:pointer; transition:all .3s ease; font-size:.85rem; font-weight:500 }
 
-.genre-tab:hover {
-    background: rgba(139, 94, 60, 0.1);
-    border-color: #8b5e3c;
-    transform: translateY(-1px);
-}
+.genre-tab:hover { background:#3b82f6; color:#ffffff; border-color:#3b82f6; transform:translateY(-1px) }
 
-.genre-tab.active {
-    background: #8b5e3c;
-    color: white;
-    border-color: #8b5e3c;
-    box-shadow: 0 2px 8px rgba(139, 94, 60, 0.3);
-}
+.genre-tab.active { background:#2563eb; color:#ffffff; border-color:#2563eb; box-shadow:0 2px 8px rgba(59,130,246,.3) }
 
 /* 장르 랭킹 리스트 */
 .genre-ranking-list {
@@ -586,24 +555,9 @@ body {
     overflow-y: auto;
 }
 
-.genre-ranking-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 1rem;
-    margin: 0.5rem 0;
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 10px;
-    border: 1px solid rgba(139, 94, 60, 0.2);
-    transition: all 0.3s ease;
-}
+.genre-ranking-item { display:flex; flex-direction:column; gap:.5rem; padding:1rem; margin:.5rem 0; background:#ffffff; border-radius:10px; border:1px solid rgba(0,0,0,.08); transition:all .3s ease }
 
-.genre-ranking-item:hover {
-    background: rgba(255, 255, 255, 1);
-    border-color: #8b5e3c;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(139, 94, 60, 0.2);
-}
+.genre-ranking-item:hover { background:#ffffff; border-color:#60a5fa; transform:translateY(-1px); box-shadow:0 4px 12px rgba(59,130,246,.2) }
 
 .ranking-info {
     display: flex;
@@ -612,8 +566,8 @@ body {
 }
 
 .rank-number {
-    background: linear-gradient(135deg, #8b5e3c, #a67c52);
-    color: white;
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    color: #ffffff;
     width: 28px;
     height: 28px;
     border-radius: 50%;
@@ -623,16 +577,16 @@ body {
     font-size: 0.85rem;
     font-weight: bold;
     flex-shrink: 0;
-    box-shadow: 0 2px 6px rgba(139, 94, 60, 0.3);
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
 }
 
 .library-info {
     flex: 1;
 }
 
-.library-info .library-name {
+.children-genre-section .library-info .library-name {
     font-weight: 600;
-    color: #5a3d26;
+    color: #0f172a;
     font-size: 0.95rem;
     margin-bottom: 0.3rem;
 }
@@ -644,7 +598,7 @@ body {
 }
 
 .checkout-count {
-    color: #8b5e3c;
+    color: #2563eb;
     font-weight: 600;
     font-size: 0.9rem;
 }
@@ -658,17 +612,37 @@ body {
 /* 랭킹 바 */
 .ranking-bar {
     height: 6px;
-    background: rgba(139, 94, 60, 0.1);
+    background: rgba(59, 130, 246, 0.12);
     border-radius: 3px;
     overflow: hidden;
 }
 
 .bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #8b5e3c, #a67c52);
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
     border-radius: 3px;
     transition: width 0.8s ease;
-    box-shadow: 0 1px 3px rgba(139, 94, 60, 0.3);
+    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+}
+
+.ranking-number {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #2563eb;
+    min-width: 30px;
+    text-align: center;
+}
+
+.ranking-library-name {
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.2rem;
+    font-size: 0.9rem;
+}
+
+.ranking-detail {
+    font-size: 0.8rem;
+    color: #374151;
 }
 
 .no-data {
@@ -680,9 +654,9 @@ body {
 }
 
 /* 어린이 전자자료 장르별 대출 랭킹 섹션 */
-.children-electronic-section { background: rgba(255, 255, 255, 0.06); border-radius: 15px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 2rem; }
+.children-electronic-section { background: #ffffff; border-radius: 15px; padding: 1.5rem; border: 1px solid rgba(0,0,0,0.08); margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); color:#2563eb }
 
-.children-electronic-section h3 { margin-top: 0; margin-bottom: 1rem; color: #ffffff; font-size: 1.1rem; }
+.children-electronic-section h3 { margin-top: 0; margin-bottom: 1rem; color: #0f172a; font-size: 1.1rem; }
 
 /* 전자자료 탭 스타일 */
 .electronic-tabs {
@@ -737,6 +711,9 @@ body {
     transition: all 0.3s ease;
 }
 
+/* 전자자료 랭킹: 도서관 이름은 흑색으로 가독성 확보 */
+.children-electronic-section .library-info .library-name { color: #0f172a; }
+
 .electronic-ranking-item:hover {
     background: rgba(255, 255, 255, 1);
     border-color: #3b82f6;
@@ -755,9 +732,9 @@ body {
 }
 
 /* 어린이 지도 섹션 */
-.children-map-section { background: rgba(255, 255, 255, 0.06); border-radius: 15px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.2); }
+.children-map-section { background: #ffffff; border-radius: 15px; padding: 1.5rem; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 4px 12px rgba(0,0,0,0.08); color:#2563eb }
 
-.children-map-section h3 { margin-top: 0; margin-bottom: 1rem; color: #ffffff; font-size: 1.1rem; }
+.children-map-section h3 { margin-top: 0; margin-bottom: 1rem; color: #0f172a; font-size: 1.1rem; }
 
 .children-map-container { margin-top: 0.5rem; }
 
@@ -927,16 +904,16 @@ body {
 
 /* 카테고리 바 (페이드인) */
 .category-bar { max-width: 1200px; margin: 0.75rem auto 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
-.category-group { background: rgba(255,255,255,0.6); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem; animation: fadeIn .4s ease both; }
+.category-group { background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem; animation: fadeIn .4s ease both; }
 .category-group:nth-child(1) { animation-delay: .05s; }
 .category-group:nth-child(2) { animation-delay: .12s; }
 .category-group:nth-child(3) { animation-delay: .18s; }
-.category-title { font-size: 0.9rem; color: var(--button); margin-bottom: 0.5rem; }
+.category-title { font-size: 0.9rem; color: #0f172a; margin-bottom: 0.5rem; }
 .category-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.chip { padding: 0.45rem 0.75rem; font-size: 0.9rem; border-radius: 999px; border: 1px solid var(--border); background: #fff; color: #374151; cursor: pointer; transition: transform .12s ease, background .2s ease; }
-.chip:hover { background: #f3f4f6; }
+.chip { padding: 0.45rem 0.75rem; font-size: 0.9rem; border-radius: 999px; border: 1px solid #3b82f6; background: #fff; color: #2563eb; cursor: pointer; transition: transform .12s ease, background .2s ease, border-color .2s ease, color .2s ease; }
+.chip:hover { background: #eff6ff; border-color: #2563eb; color: #1e40af; }
 .chip:active { transform: scale(.98); }
-.chip.active { background: #ede3d6; border-color: #d7c3a8; color: #5a3d26; animation: pop .18s ease; }
+.chip.active { background: #3b82f6; border-color: #3b82f6; color: #ffffff; animation: pop .18s ease; }
 
 /* 2단계 카테고리 스타일 */
 .category-level-1 {
@@ -951,21 +928,23 @@ body {
 }
 
 .primary-chip {
-    background: #fff;
-    color: #374151;
-    border-color: var(--border);
+    background: #ffffff;
+    color: #2563eb;
+    border-color: #3b82f6;
     font-weight: 400;
     font-size: 0.9rem;
 }
 
 .primary-chip:hover {
-    background: #f3f4f6;
+    background: #eff6ff;
+    border-color: #2563eb;
+    color: #1e40af;
 }
 
 .primary-chip.active {
-    background: #ede3d6;
-    border-color: #d7c3a8;
-    color: #5a3d26;
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
 }
 
 .secondary-chip {
@@ -974,9 +953,9 @@ body {
 }
 
 .secondary-chip.active {
-    background: #f4d082;
-    border-color: #e6c770;
-    color: #6d4c20;
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
 }
 
 /* 메인 콘텐츠 */
@@ -1008,7 +987,7 @@ body {
 .sidebar{background:transparent}
 .advanced-filters,.stats-bar{background:transparent}
 .stats-bar{margin:1rem 0 1rem;display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}
-.stat-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:1rem;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.stat-card{background:#ffffff;border:1px solid var(--border);border-radius:12px;padding:1rem;box-shadow:0 1px 2px rgba(0,0,0,.06)}
 
 /* 토글 스위치 */
 .switch{position:relative;display:inline-block;width:44px;height:24px}
@@ -1017,15 +996,15 @@ body {
 .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;top:3px;background:white;transition:.2s;border-radius:50%}
 .switch input:checked + .slider{background:#b38a67}
 .switch input:checked + .slider:before{transform:translateX(20px)}
-.switch-label{font-size:.9rem;color:#4b5563}
+.switch-label{font-size:.9rem;color:#ffffff}
 
 /* 도서관 목록 */
-.library-list { position: relative; padding: 2.6rem 0 0 0; background: rgba(148,163,184,0.14); border: 1px solid rgba(148,163,184,0.35); border-radius: 16px; box-shadow: 0 10px 28px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.06); overflow: hidden; }
-.library-item { padding: 1rem 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.12); cursor: pointer; transition: background-color .2s, box-shadow .2s; opacity: 0; transform: translateY(8px); backdrop-filter: blur(2px); color: #e5e7eb; }
-.library-item:hover { background-color: rgba(255,255,255,0.08); box-shadow: inset 0 -1px 0 rgba(255,255,255,0.12); }
-.library-item.selected { background-color: rgba(59,130,246,0.15); border-left: 4px solid #60a5fa; }
-.library-name { font-weight: 700; color: #ffffff; margin-bottom: 0.5rem; }
-.library-info { font-size: 0.92rem; color: #e5e7eb; line-height: 1.5; }
+.library-list { position: relative; padding: 2.6rem 0 0 0; background: #ffffff; border: 1px solid rgba(0,0,0,0.08); border-radius: 16px; box-shadow: 0 10px 28px rgba(0,0,0,0.12); overflow: hidden; }
+.library-item { padding: 1rem 1.2rem; border-bottom: 1px solid rgba(0,0,0,0.06); cursor: pointer; transition: background-color .2s, box-shadow .2s; opacity: 0; transform: translateY(8px); color: #111827; }
+.library-item:hover { background-color: rgba(59,130,246,0.06); box-shadow: inset 0 -1px 0 rgba(0,0,0,0.06); }
+.library-item.selected { background-color: rgba(59,130,246,0.08); border-left: 4px solid #60a5fa; }
+.library-name { font-weight: 700; color: #111827; margin-bottom: 0.5rem; }
+.library-info { font-size: 0.92rem; color: #4b5563; line-height: 1.5; }
 .library-item.appear { animation: fadeInUp .35s ease forwards; }
 .library-name { font-weight: 700; color: #111827; margin-bottom: 0.5rem; }
 .library-info { font-size: 0.92rem; color: #4b5563; line-height: 1.5; }
@@ -1443,7 +1422,8 @@ body {
 
 /* 간격: 도서관 목록 제목 아래와 첫 컨트롤 사이 */
 .sidebar-header h3{margin-bottom:1.1rem;color:#ffffff}
-.sidebar-header .filter-controls{margin-top:.35rem;margin-bottom:.6rem;display:flex;gap:.5rem;flex-wrap:wrap}
+.sidebar-header h3{color:#ffffff}
+.sidebar-header .filter-controls{margin-top:.35rem;margin-bottom:.6rem;display:flex;gap:.9rem;flex-wrap:wrap}
 
 /* 가로 스크롤 방지 */
 .sidebar{overflow-x:hidden}
@@ -1469,7 +1449,10 @@ body {
 
 /* 입력/셀렉트 높이와 상단 여백 통일 */
 .advanced-filters input[type=number],
-.mini-select{padding:.65rem .75rem;border:1px solid var(--border);border-radius:10px;background:#fff;min-height:44px}
+.mini-select{padding:.65rem .75rem;border:1px solid var(--border);border-radius:10px;background:#fff;min-height:44px;color:#111827}
+
+/* 고급필터 박스/입력 흰색 보장 */
+.sidebar .advanced-filters .af-row{background:#ffffff;border:1px solid var(--border)}
 
 /* 그리드 간격과 좌우 여백 유지 */
 .advanced-filters{margin-top:.25rem;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.25rem;overflow-x:hidden;padding:0 .25rem}
