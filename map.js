@@ -102,7 +102,7 @@ console.log('test');
       const center = new kakao.maps.LatLng(37.5665, 126.9780);
       state.map = new kakao.maps.Map(document.getElementById(state.containerId), {
         center,
-        level: state.options.level || 3,
+        level: state.options.level || 8,
         draggable: true,
         scrollwheel: true,
       });
@@ -132,6 +132,9 @@ console.log('test');
         console.log('MarkerClusterer 초기화 실패:', e);
         console.log('kakao.maps 객체:', kakao.maps);
       }
+      
+      // 지도 초기화 후 즉시 폴리곤 로드
+      loadInitialPolygons();
     });
   }
 
@@ -153,16 +156,10 @@ console.log('test');
     ensureKakaoLoaded(()=>{
       if (!state.map) init(state.containerId, state.options);
       clear();
-      
-      // 폴리곤 초기화 (처음부터 활성화)
-      if (state.areas.length === 0) {
-        initPolygons();
-      }
-      
       const rows = Array.isArray(libraries) ? libraries.filter(l=>l.lat&&l.lng) : [];
       if (rows.length === 0){
         state.map.setCenter(new kakao.maps.LatLng(37.5665, 126.9780));
-        state.map.setLevel(state.options.level || 3);
+        state.map.setLevel(state.options.level || 8);
         return;
       }
       // 반지름 스케일(px) - 이용자 수에 따라 최대 1.5배까지 증가
@@ -196,7 +193,7 @@ console.log('test');
           const ne = bounds.getNorthEast();
           const center = new kakao.maps.LatLng((sw.getLat()+ne.getLat())/2, (sw.getLng()+ne.getLng())/2);
           state.map.setCenter(center);
-          state.map.setLevel(state.options.level || 3);
+          state.map.setLevel(state.options.level || 8);
           state.firstRender = false;
         } else if (state.interacted) {
           state.map.setBounds(bounds, 20, 20, 20, 20);
@@ -207,7 +204,7 @@ console.log('test');
           // const ne = bounds.getNorthEast();
           // const center = new kakao.maps.LatLng((sw.getLat()+ne.getLat())/2, (sw.getLng()+ne.getLng())/2);
           // state.map.setCenter(center);
-          state.map.setLevel(state.options.level || 3);
+          state.map.setLevel(state.options.level || 8);
         }
       }catch(_){ }
     });
@@ -301,7 +298,7 @@ console.log('test');
     
     state.polygons.push(polygon);
 
-    // 클릭 이벤트만 유지
+    // 클릭 이벤트만 유지 (호버 이벤트 제거)
     kakao.maps.event.addListener(polygon, 'click', function (mouseEvent) {
       if (!state.detailMode) {
         state.map.setLevel(10);
@@ -329,6 +326,16 @@ console.log('test');
     }
   }
 
+  // 초기 폴리곤 로드 함수 추가
+  function loadInitialPolygons() {
+    if (!state.map) return;
+    
+    // 지도가 준비되면 즉시 폴리곤 초기화
+    if (state.ready && state.polygons.length === 0) {
+      initPolygons();
+    }
+  }
+
   function select(libraryId){
     state.selectedId = libraryId;
     // 선택 스타일 변경이 필요하면 여기서 마커 이미지 교체 등 구현
@@ -339,7 +346,6 @@ console.log('test');
     state.listeners[event].push(handler);
   }
 
-  global.MapView = { init, render, select, clear, on };
+  global.MapView = { init, render, select, clear, on, loadInitialPolygons };
 })(window);
-
 
