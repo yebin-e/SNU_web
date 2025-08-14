@@ -15,7 +15,8 @@
     areas: [],
     detailMode: false,
     hasAnimated: false,
-    customOverlay: null
+    customOverlay: null,
+    isPolygonClick: false
   };
 
   function emit(event, payload){ (state.listeners[event]||[]).forEach(fn=>{ try{ fn(payload); }catch(_){} }); }
@@ -79,7 +80,7 @@
         state.interacted = true; 
         updateMarkerSizes(); 
         updateClusteringMode(); 
-        updatePolygonMode(); 
+        // 폴리곤 관련 모든 기능 비활성화 (투명도 고정)
       });
       try{
         if (typeof kakao.maps.MarkerClusterer !== 'undefined'){
@@ -96,15 +97,17 @@
 
   function clear(){
     if (!state.map) return;
-    try{ state.hoverOverlay && state.hoverOverlay.setMap(null); }catch(_){ }
-    state.hoverOverlay = null;
+    if (state.hoverOverlay) {
+      state.hoverOverlay.remove();
+      state.hoverOverlay = null;
+    }
     state.markers.forEach(m=>{ try{ m.marker.setMap(null); }catch(_){} });
     state.markers = [];
     const prevCharacters = document.querySelectorAll('.character-wrapper');
     prevCharacters.forEach(el => el.remove());
     state.hasAnimated = false;  // 애니메이션 재실행 가능하도록 초기화
     try{ state.clusterer && state.clusterer.clear(); state.clusterer.setMap(null); }catch(_){}
-    removePolygons();
+    // 폴리곤은 제거하지 않음 (투명도 유지)
   }
 
   function render(libraries){
@@ -163,8 +166,22 @@
         });
   
         const marker = new kakao.maps.Marker({ position: pos, image, zIndex: 2 });
-        kakao.maps.event.addListener(marker, 'mouseover', () => showHoverCard(d, pos));
-        kakao.maps.event.addListener(marker, 'mouseout', hideHoverCard);
+        // ageFocus가 선택되었을 때만 호버 카드 표시
+        if (window.ageFocus) {
+          let hoverTimeout;
+          kakao.maps.event.addListener(marker, 'mouseover', () => {
+            clearTimeout(hoverTimeout);
+            hoverTimeout = setTimeout(() => {
+              if (!state.hoverOverlay) {
+                showHoverCard(d, pos);
+              }
+            }, 100);
+          });
+          kakao.maps.event.addListener(marker, 'mouseout', () => {
+            clearTimeout(hoverTimeout);
+            hideHoverCard();
+          });
+        }
         kakao.maps.event.addListener(marker, 'click', () => emit('markerClick', d));
         state.markers.push({ marker, baseSize, lib: d });
   
@@ -173,7 +190,8 @@
           // 줌 레벨 변경 후에 캐릭터 애니메이션 실행
           setTimeout(() => {
             const targetPoint = proj.containerPointFromCoords(pos);
-            const startX = Math.random() > 0.5 ? -100 : mapContainer.offsetWidth + 100;
+            // 시작 위치를 더 가깝게 조정 (외곽 거리 단축)
+            const startX = Math.random() > 0.5 ? -60 : mapContainer.offsetWidth + 60;
             const startY = Math.random() * mapContainer.offsetHeight;
 
             const charDiv = document.createElement('div');
@@ -181,26 +199,82 @@
             charDiv.style.left = `${startX}px`;
             charDiv.style.top = `${startY}px`;
             charDiv.style.position = 'absolute';
+            charDiv.style.zIndex = '1';
+            charDiv.style.pointerEvents = 'none';
+            charDiv.style.position = 'absolute';
             charDiv.style.transition = (age === 'child')
               ? 'transform 1.2s ease-out'
-              : 'transform 2.4s ease-in';
+              : 'transform 1.8s ease-out'; // 청소년/어른 애니메이션 시간 단축
+            
+            // 왼쪽에서 오는 경우 처음부터 뒤집은 채로 시작
+            if (startX < 0) {
+              charDiv.style.transform = 'rotateY(180deg)';
+            }
 
             const img = document.createElement('img');
             img.src = imagePath;
-            img.style.width = '72px'; // 크기를 2배로 증가 (36px -> 72px)
+            
+            // 청소년 캐릭터는 크기를 줄임
+            if (age === 'teen') {
+              img.style.width = '50px';
+            } else {
+              img.style.width = '72px'; // 크기를 2배로 증가 (36px -> 72px)
+            }
+            
             img.style.height = 'auto';
             img.style.pointerEvents = 'none';
             
-            // 왼쪽에서 오는 경우 좌우반전
-            if (startX < 0) {
-              img.style.transform = 'scaleX(-1)';
-            }
+            // 이미지 개별 transform 제거 (charDiv에서 통합 적용)
+            console.log(startX);
             
             charDiv.appendChild(img);
-            mapContainer.appendChild(charDiv);
+            mapContainer.insertBefore(charDiv, mapContainer.firstChild);
+            const overlayNode = document.querySelector('.age-focus-popup');
+            if (overlayNode) {
+              mapContainer.insertBefore(charDiv, overlayNode);
+            } else {
+              mapContainer.appendChild(charDiv);
+            }
 
             setTimeout(() => {
-              charDiv.style.transform = `translate(${targetPoint.x - startX - 36}px, ${targetPoint.y - startY - 72}px)`; // 오프셋도 2배로 조정
+              // 청소년 캐릭터는 오프셋을 조정
+              let offsetX, offsetY;
+              if (age === 'teen') {
+                offsetX = 25; // 50px의 절반
+                offsetY = 50; // 50px
+              } else {
+                offsetX = 36; // 72px의 절반
+                offsetY = 72; // 72px
+              }
+              
+              // translate만 적용 (rotateY는 이미 초기에 적용됨)
+              charDiv.style.transform = `translate(${targetPoint.x - startX - offsetX}px, ${targetPoint.y - startY - offsetY}px)`;
+              
+              // 왼쪽에서 오는 경우 rotateY도 함께 유지
+              if (startX < 0) {
+                charDiv.style.transform = `translate(${targetPoint.x - startX - offsetX}px, ${targetPoint.y - startY - offsetY}px) rotateY(180deg)`;
+              }
+              
+              // 캐릭터가 도착하면 이미지를 fin으로 변경
+              if (age === 'child') {
+                setTimeout(() => {
+                  img.src = 'img/child_run_fin.png';
+                  img.style.width = '40px'; // fin 이미지는 크기를 조금 줄여서 맞춤
+                  charDiv.style.zIndex = '1'; // fin 상태에서도 매우 낮은 z-index 유지
+                }, 1200); // 애니메이션 완료 후 이미지 변경 (1.2초)
+              } else if (age === 'teen') {
+                setTimeout(() => {
+                  img.src = 'img/teen_walk_fin.png';
+                  img.style.width = '30px'; // teen fin 이미지 크기 조정
+                  charDiv.style.zIndex = '1'; // fin 상태에서도 매우 낮은 z-index 유지
+                }, 1800); // 애니메이션 완료 후 이미지 변경 (1.8초)
+              } else if (age === 'adult') {
+                setTimeout(() => {
+                  img.src = 'img/adult_walk_fin.png';
+                  img.style.width = '40px'; // adult fin 이미지 크기 조정
+                  charDiv.style.zIndex = '1'; // fin 상태에서도 매우 낮은 z-index 유지
+                }, 1800); // 애니메이션 완료 후 이미지 변경 (1.8초)
+              }
             }, 100);
           }, 500); // 줌 레벨 변경 후 0.5초 지연
         }
@@ -217,32 +291,134 @@
       state.map.setCenter(center);
       state.map.setLevel(8);
   
-      loadInitialPolygons();  // 폴리곤 다시 로드
+      // 폴리곤이 이미 로드되어 있으면 다시 로드하지 않음
+      if (state.polygons.length === 0) {
+        loadInitialPolygons();
+      }
     });
   }
   
 
   function showHoverCard(d, pos){
-    try{ state.hoverOverlay && state.hoverOverlay.setMap(null); }catch(_){ }
-    const totalHoldings = (d.holdingsDomestic||0) + (d.holdingsForeign||0);
+    // 이미 호버 카드가 있으면 제거
+    if (state.hoverOverlay) {
+      state.hoverOverlay.remove();
+      state.hoverOverlay = null;
+    }
+    
     const box = document.createElement('div');
-    box.className = 'ko-popup';
+    box.className = 'age-focus-popup';
+    
+    // 연령별 회원 비율 계산
+    const childMembers = d.연령별회원등록자수_어린이 || 0;
+    const teenMembers = d.연령별회원등록자수_청소년 || 0;
+    const adultMembers = d.연령별회원등록자수_성인 || 0;
+    const totalMembers = childMembers + teenMembers + adultMembers;
+    
+    let rank = '';
+    let ageRatio = 0;
+    let ageLabel = '';
+    
+    if (window.ageFocus === 'child' && totalMembers > 0) {
+      ageRatio = (childMembers / totalMembers * 100).toFixed(1);
+      ageLabel = '어린이';
+    } else if (window.ageFocus === 'teen' && totalMembers > 0) {
+      ageRatio = (teenMembers / totalMembers * 100).toFixed(1);
+      ageLabel = '청소년';
+    } else if (window.ageFocus === 'adult' && totalMembers > 0) {
+      ageRatio = (adultMembers / totalMembers * 100).toFixed(1);
+      ageLabel = '성인';
+    }
+    
+    // 순위 계산 (현재 필터된 도서관들 중에서)
+    if (window.filteredLibraries) {
+      const currentIndex = window.filteredLibraries.findIndex(lib => lib.id === d.id);
+      if (currentIndex !== -1) {
+        rank = currentIndex + 1;
+      }
+    }
+    
+    // 주소 처리: )까지만 표시하고 잘라내기
+    let displayAddress = d.address || '-';
+    const closeBracketIndex = displayAddress.indexOf(')');
+    if (closeBracketIndex !== -1) {
+      displayAddress = displayAddress.substring(0, closeBracketIndex + 1);
+    }
+    
+    // 파이차트 SVG 생성
+    const pieChartSVG = `
+      <svg width="60" height="60" viewBox="0 0 60 60">
+        <circle cx="30" cy="30" r="25" fill="none" stroke="#e0e0e0" stroke-width="5"/>
+        <circle cx="30" cy="30" r="25" fill="none" stroke="#4CAF50" stroke-width="5" 
+                stroke-dasharray="${2 * Math.PI * 25 * ageRatio / 100} ${2 * Math.PI * 25}" 
+                transform="rotate(-90 30 30)"/>
+        <text x="30" y="35" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">${ageRatio}%</text>
+      </svg>
+    `;
+    
     box.innerHTML = `
-      <div class="title">${d.name||''}</div>
-      <div class="meta">
-        주소: ${d.address||'-'}<br/>
-        방문자수: ${(d.visitors||0).toLocaleString()}명<br/>
-        보유도서: ${totalHoldings.toLocaleString()}권
+      <div class="popup-header">
+        <div class="rank-badge">${rank}</div>
+        <div class="library-name">${d.name || ''}</div>
+      </div>
+      <div class="popup-content">
+        <div class="address-section">
+          <div class="address-label">주소</div>
+          <div class="address-text">${displayAddress}</div>
+        </div>
+        <div class="ratio-section">
+          <div class="ratio-label">${ageLabel} 회원 비율</div>
+          <div class="pie-chart-container">
+            ${pieChartSVG}
+          </div>
+        </div>
       </div>
     `;
-    state.hoverOverlay = new kakao.maps.CustomOverlay({ position: pos, content: box, yAnchor: 1.1, xAnchor: 0.5, zIndex: 12 });
-    state.hoverOverlay.setMap(state.map);
+    
+    // 지도 좌표를 화면 좌표로 변환
+    const mapContainer = document.getElementById('map');
+    const proj = state.map.getProjection();
+    const point = proj.containerPointFromCoords(pos);
+    
+    // 카드 위치 계산
+    const cardWidth = 320;
+    const cardHeight = 200;
+    let left = point.x - cardWidth / 2;
+    let top = point.y - cardHeight - 10; // 마커 위에 표시
+    
+    // 화면 경계 체크
+    const mapRect = mapContainer.getBoundingClientRect();
+    
+    // 위쪽 공간이 부족하면 아래쪽으로 표시
+    if (top < 10) {
+      top = point.y + 30; // 마커 아래에 표시
+    }
+    
+    // 좌우 경계 체크
+    if (left < 10) {
+      left = 10;
+    } else if (left + cardWidth > mapRect.width - 10) {
+      left = mapRect.width - cardWidth - 10;
+    }
+    
+    // 카드 스타일 설정
+    box.style.position = 'absolute';
+    box.style.left = left + 'px';
+    box.style.top = top + 'px';
+    box.style.zIndex = '999999';
+    box.style.pointerEvents = 'none'; // 클릭 이벤트 방지
+    
+    // 지도 컨테이너에 추가
+    mapContainer.appendChild(box);
+    state.hoverOverlay = box;
     emit('markerHover', d);
   }
 
   function hideHoverCard(){
-    try{ state.hoverOverlay && state.hoverOverlay.setMap(null); }catch(_){ }
-    state.hoverOverlay = null;
+    if (state.hoverOverlay) {
+      state.hoverOverlay.remove();
+      state.hoverOverlay = null;
+    }
   }
 
   function removePolygons() {
@@ -278,31 +454,78 @@
     const polygon = new kakao.maps.Polygon({
       map: state.map,
       path: area.path,
-      strokeWeight: 2,
+      strokeWeight: 1.5,
       strokeColor: '#004c80',
-      strokeOpacity: 0.8,
+      strokeOpacity: 0.6,
       fillColor: '#fff',
-      fillOpacity: 0.7
+      fillOpacity: 0.4
     });
     state.polygons.push(polygon);
     kakao.maps.event.addListener(polygon, 'click', function (mouseEvent) {
-      if (!state.detailMode) {
-        state.map.setLevel(10);
-        state.map.panTo(mouseEvent.latLng);
+      // 폴리곤 구역의 크기에 맞춰 줌 레벨 조정
+      const clickedLatLng = mouseEvent.latLng;
+      
+      // 폴리곤의 경계 계산
+      const bounds = new kakao.maps.LatLngBounds();
+      area.path.forEach(latLng => {
+        bounds.extend(latLng);
+      });
+      
+      // 폴리곤의 크기 계산 (위도/경도 차이)
+      const sw = bounds.getSouthWest();
+      const ne = bounds.getNorthEast();
+      const latDiff = Math.abs(ne.getLat() - sw.getLat());
+      const lngDiff = Math.abs(ne.getLng() - sw.getLng());
+      const maxDiff = Math.max(latDiff, lngDiff);
+      
+      // 크기에 따른 적절한 줌 레벨 계산 (각 폴리곤마다 고유한 적절한 레벨)
+      let targetLevel;
+      if (maxDiff > 0.1) {
+        targetLevel = 7.3; // 큰 구역 (강남구, 송파구 등)
+      } else if (maxDiff > 0.05) {
+        targetLevel = 6.8; // 중간 구역
+      } else {
+        targetLevel =6; // 작은 구역
       }
+      
+      // 항상 해당 폴리곤의 적절한 줌 레벨로 이동
+      const finalLevel = targetLevel;
+      
+      // 현재 줌 레벨
+      const currentLevel = state.map.getLevel();
+      
+      // 역동적인 줌 애니메이션 (항상 실행)
+      const zoomSteps = 4; // 단계별 줌
+      let step = 0;
+      
+      const zoomAnimation = setInterval(() => {
+        step++;
+        const progress = step / zoomSteps;
+        const easeProgress = 1 - Math.pow(1 - progress, 3); // 이징 함수로 부드러운 애니메이션
+        
+        const currentZoom = currentLevel - (currentLevel - finalLevel) * easeProgress;
+        state.map.setLevel(currentZoom);
+        
+        if (step >= zoomSteps) {
+          clearInterval(zoomAnimation);
+          // 폴리곤 전체가 보이도록 중심 이동
+          const center = new kakao.maps.LatLng(
+            (sw.getLat() + ne.getLat()) / 2,
+            (sw.getLng() + ne.getLng()) / 2
+          );
+          state.map.panTo(center);
+        }
+      }, 80); // 80ms 간격으로 애니메이션
+      
+      // 클릭한 구역 이름을 콘솔에 출력 (디버깅용)
+      console.log(`클릭한 구역: ${area.name}, 크기: ${maxDiff.toFixed(4)}, 줌 레벨: ${currentLevel} → ${finalLevel}`);
     });
   }
 
   function updatePolygonMode() {
-    if (!state.map) return;
-    const level = state.map.getLevel();
-    const newDetailMode = level <= 10;
-    if (newDetailMode !== state.detailMode) {
-      state.detailMode = newDetailMode;
-      if (state.detailMode && state.polygons.length === 0) {
-        initPolygons();
-      }
-    }
+    // 폴리곤 투명도는 고정하므로 이 함수는 비활성화
+    // 줌 레벨에 따라 폴리곤을 다시 로드하지 않음
+    return;
   }
 
   function loadInitialPolygons() {

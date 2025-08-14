@@ -1712,4 +1712,112 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-
     50% { transform: translateY(-3px); }
   }
   
-  
+/* Age Focus Popup Styles */
+.age-focus-popup {
+  background: #ffffff;
+  border: 2px solid #4CAF50;
+  border-radius: 16px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+  padding: 0;
+  min-width: 280px;
+  max-width: 320px;
+  pointer-events: auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden;
+  opacity: 1;
+  backdrop-filter: none;
+  z-index: 999999 !important;
+  position: relative;
+}
+
+.popup-header {
+  background: #4CAF50;
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 1;
+}
+
+.rank-badge {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.library-name {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.3;
+  flex: 1;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.popup-content {
+  padding: 20px;
+  background: #ffffff;
+  opacity: 1;
+}
+
+.address-section {
+  margin-bottom: 20px;
+}
+
+.address-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.address-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1f2937;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  font-weight: 500;
+  padding: 8px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  white-space: normal;
+}
+
+.ratio-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ratio-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  flex: 1;
+  margin-right: 8px;
+}
+
+.pie-chart-container {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pie-chart-container svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}

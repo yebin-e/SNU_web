@@ -42,7 +42,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   setupCategoryChips();
   // 지도 초기화 (파트너 모듈)
   if (window.MapView) {
-    MapView.init('map', { level: 8 });
+    MapView.init('map', { level: 7 });
     // 지도 초기화 후 폴리곤 로드
     setTimeout(() => {
       if (window.MapView && window.MapView.loadInitialPolygons) {
@@ -1673,6 +1673,14 @@ function applyFilters() {
   }
 
   libraries = result;
+  
+  // ageFocus로 필터된 경우 전역 변수에 저장 (팝업에서 순위 계산용)
+  if (ageFocus) {
+    window.filteredLibraries = result;
+  } else {
+    window.filteredLibraries = null;
+  }
+  
   displayLibraries();
   renderStats(result);
   // 지도 렌더 (파트너 모듈)
