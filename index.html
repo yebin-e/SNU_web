@@ -114,21 +114,7 @@
                     <p>서울시 도서관의 장르별 도서 이용 현황을 시각적으로 확인해보세요.</p>
                 </div>
                 
-                <div class="genre-tabs-container">
-                    <div class="genre-tabs" id="mainGenreTabs">
-                        <button class="genre-tab active" data-genre="total">전체</button>
-                        <button class="genre-tab" data-genre="총류">총류</button>
-                        <button class="genre-tab" data-genre="철학">철학</button>
-                        <button class="genre-tab" data-genre="종교">종교</button>
-                        <button class="genre-tab" data-genre="사회과학">사회과학</button>
-                        <button class="genre-tab" data-genre="순수과학">순수과학</button>
-                        <button class="genre-tab" data-genre="기술과학">기술과학</button>
-                        <button class="genre-tab" data-genre="예술">예술</button>
-                        <button class="genre-tab" data-genre="언어">언어</button>
-                        <button class="genre-tab" data-genre="문학">문학</button>
-                        <button class="genre-tab" data-genre="역사">역사</button>
-                    </div>
-                </div>
+                
                 
 
                 
@@ -193,20 +179,20 @@
             <div class="children-main">
                 <div class="info-section">
                     <h2>🎨 어린이 친화적인 도서관</h2>
-                    <p>어린이실을 보유하고 어린이 프로그램이 풍부한 도서관들을 소개합니다.</p>
+                    <p>어린이실을 보유하고 어린이 도서가 풍부한 도서관들을 소개합니다.</p>
                 </div>
                 
 
                 
                 <div class="children-library-section">
-                    <h3>🌟 어린이 시설이 잘 갖춰진 도서관</h3>
+                    <h3>🌟 어린이 시설이 잘 갖춰진 도서관 Top 10</h3>
                     <div class="children-library-list" id="childrenLibraryList">
                         <div id="childrenLibraryContainer"></div>
                     </div>
                 </div>
                 
                 <div class="children-genre-section">
-                    <h3>📊 어린이 인쇄자료 장르별 대출 랭킹</h3>
+                    <h3>📊 어린이 인쇄자료 장르별 대출 랭킹 Top 10</h3>
                     <div class="genre-ranking-container">
                         <div class="genre-tabs" id="genreTabs">
                             <button class="genre-tab active" data-genre="total">전체</button>
@@ -227,27 +213,7 @@
                     </div>
                 </div>
                 
-                <div class="children-electronic-section">
-                    <h3>💻 어린이 전자자료 장르별 대출 랭킹</h3>
-                    <div class="electronic-ranking-container">
-                        <div class="electronic-tabs" id="electronicTabs">
-                            <button class="electronic-tab active" data-genre="total">전체</button>
-                            <button class="electronic-tab" data-genre="총류">총류</button>
-                            <button class="electronic-tab" data-genre="철학">철학</button>
-                            <button class="electronic-tab" data-genre="종교">종교</button>
-                            <button class="electronic-tab" data-genre="사회과학">사회과학</button>
-                            <button class="electronic-tab" data-genre="순수과학">순수과학</button>
-                            <button class="electronic-tab" data-genre="기술과학">기술과학</button>
-                            <button class="electronic-tab" data-genre="예술">예술</button>
-                            <button class="electronic-tab" data-genre="언어">언어</button>
-                            <button class="electronic-tab" data-genre="문학">문학</button>
-                            <button class="electronic-tab" data-genre="역사">역사</button>
-                        </div>
-                        <div class="electronic-ranking-list" id="electronicRankingList">
-                            <!-- 전자자료 장르별 랭킹이 여기에 표시됩니다 -->
-                        </div>
-                    </div>
-                </div>
+
                 
                 <div class="children-map-section">
                     <h3>📍 어린이 친화 도서관 위치</h3>
@@ -337,63 +303,61 @@
             <!-- 사이드바 -->
             <aside class="sidebar">
                 <div class="sidebar-card">
-                <div class="sidebar-header">
-                    <h3>도서관 목록</h3>
-                    <div class="filter-controls">
-                        <select id="districtFilter">
-                            <option value="">전체 구</option>
-                            <option value="강남구">강남구</option>
-                            <option value="강동구">강동구</option>
-                            <option value="강북구">강북구</option>
-                            <option value="강서구">강서구</option>
-                            <option value="관악구">관악구</option>
-                            <option value="광진구">광진구</option>
-                            <option value="구로구">구로구</option>
-                            <option value="금천구">금천구</option>
-                            <option value="노원구">노원구</option>
-                            <option value="도봉구">도봉구</option>
-                            <option value="동대문구">동대문구</option>
-                            <option value="동작구">동작구</option>
-                            <option value="마포구">마포구</option>
-                            <option value="서대문구">서대문구</option>
-                            <option value="서초구">서초구</option>
-                            <option value="성동구">성동구</option>
-                            <option value="성북구">성북구</option>
-                            <option value="송파구">송파구</option>
-                            <option value="양천구">양천구</option>
-                            <option value="영등포구">영등포구</option>
-                            <option value="용산구">용산구</option>
-                            <option value="은평구">은평구</option>
-                            <option value="종로구">종로구</option>
-                            <option value="중구">중구</option>
-                            <option value="중랑구">중랑구</option>
-                        </select>
+                    <div class="sidebar-header">
+                        <h3>도서관 목록</h3>
+                        <div class="filter-controls">
+                            <select id="districtFilter">
+                                <option value="">전체 구</option>
+                                <option value="강남구">강남구</option>
+                                <option value="강동구">강동구</option>
+                                <option value="강북구">강북구</option>
+                                <option value="강서구">강서구</option>
+                                <option value="관악구">관악구</option>
+                                <option value="광진구">광진구</option>
+                                <option value="구로구">구로구</option>
+                                <option value="금천구">금천구</option>
+                                <option value="노원구">노원구</option>
+                                <option value="도봉구">도봉구</option>
+                                <option value="동대문구">동대문구</option>
+                                <option value="동작구">동작구</option>
+                                <option value="마포구">마포구</option>
+                                <option value="서대문구">서대문구</option>
+                                <option value="서초구">서초구</option>
+                                <option value="성동구">성동구</option>
+                                <option value="성북구">성북구</option>
+                                <option value="송파구">송파구</option>
+                                <option value="양천구">양천구</option>
+                                <option value="영등포구">영등포구</option>
+                                <option value="용산구">용산구</option>
+                                <option value="은평구">은평구</option>
+                                <option value="종로구">종로구</option>
+                                <option value="중구">중구</option>
+                                <option value="중랑구">중랑구</option>
+                            </select>
+                            <select id="sortSelect" class="sort-select">
+                                <option value="">정렬 없음</option>
+                                <option value="holdingsDesc">보유도서 많은 순</option>
+                                <option value="visitorsDesc">방문자 많은 순</option>
+                                <option value="loansDesc">대출 많은 순</option>
+                                <option value="seatsDesc">좌석 많은 순</option>
+                                <option value="areaDesc">면적 큰 순</option>
+                                <option value="yearDesc">개관년도 최신 순</option>
+                                <option value="yearAsc">개관년도 오래된 순</option>
+                            </select>
+                        </div>
+                        <div class="age-filter-section">
+                            <select id="ageFocus" class="age-select">
+                                <option value="">연령대 집중 없음</option>
+                                <option value="child">어린이 이용 많음</option>
+                                <option value="teen">청소년 이용 많음</option>
+                                <option value="adult">성인 이용 많음</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="control-row">
-                        <select id="sortSelect" class="sort-select">
-                            <option value="">정렬 없음</option>
-                            <option value="holdingsDesc">보유도서 많은 순</option>
-                            <option value="visitorsDesc">방문자 많은 순</option>
-                            <option value="loansDesc">대출 많은 순</option>
-                            <option value="seatsDesc">좌석 많은 순</option>
-                            <option value="areaDesc">면적 큰 순</option>
-                            <option value="yearDesc">개관년도 최신 순</option>
-                            <option value="yearAsc">개관년도 오래된 순</option>
-                        </select>
-                        <select id="ageFocus" class="mini-select">
-                            <option value="">연령대 집중 없음</option>
-                            <option value="child">어린이 이용 많음</option>
-                            <option value="teen">청소년 이용 많음</option>
-                            <option value="adult">성인 이용 많음</option>
-                        </select>
-                    </div>
-                    
-                </div>
 
-                <div class="library-list-wrap sidebar-section">
-                    
-                    <div class="library-list" id="libraryList"></div>
-                </div>
+                    <div class="library-list" id="libraryList">
+                        <div class="library-list-inner" id="libraryListInner"></div>
+                    </div>
                 </div>
             </aside>
         </main>

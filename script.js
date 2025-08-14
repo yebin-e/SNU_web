@@ -939,14 +939,14 @@ function initializeIntroScreen() {
         tabs.forEach(t => t.classList.remove('active'));
         // 클릭된 탭에 active 클래스 추가
         tab.classList.add('active');
-        // 해당 장르 랭킹 표시
-        showGenreRanking(tab.dataset.genre);
+        // 해당 장르 랭킹 표시 (자동 스크롤 활성화)
+        showGenreRanking(tab.dataset.genre, true);
       });
     });
   }
 
   // 장르별 랭킹 표시
-  function showGenreRanking(genre) {
+  function showGenreRanking(genre, autoScroll = false) {
     const container = document.getElementById('genreRankingList');
     if (!container || !window.childrenGenreData) return;
 
@@ -1003,6 +1003,61 @@ function initializeIntroScreen() {
         </div>
       `;
     }).join('');
+
+    // 선택된 장르의 top 10 도서관들을 지도에 표시
+    showChildrenLibrariesOnMap(topLibraries, genre);
+
+    // 지도가 보이도록 자동 스크롤 (필터탭 클릭 시에만)
+    if (autoScroll) {
+      setTimeout(() => {
+        const mapSection = document.querySelector('.children-map-section');
+        if (mapSection) {
+          mapSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+          });
+        }
+      }, 300); // 랭킹 렌더링 후 스크롤 실행
+    }
+  }
+
+  // 어린이 장르별 top 10 도서관들을 지도에 표시하는 함수
+  function showChildrenLibrariesOnMap(libraries, genre = '전체') {
+    // 지도 컨테이너 확인
+    const mapContainer = document.getElementById('childrenMapContainer');
+    if (!mapContainer) return;
+
+    // 지도가 로드되었는지 확인
+    if (window.MapView && window.MapView.showFilteredLibraries) {
+      if (libraries.length === 0) {
+        // 도서관이 없으면 모든 도서관 표시
+        window.MapView.showAllLibraries();
+        return;
+      }
+
+      // 장르별 라벨 생성
+      const genreLabels = {
+        'total': '전체 어린이 대출 상위 10개 도서관',
+        '총류': '어린이 총류 인쇄자료 대출 상위 10개 도서관',
+        '철학': '어린이 철학 인쇄자료 대출 상위 10개 도서관',
+        '종교': '어린이 종교 인쇄자료 대출 상위 10개 도서관',
+        '사회과학': '어린이 사회과학 인쇄자료 대출 상위 10개 도서관',
+        '순수과학': '어린이 순수과학 인쇄자료 대출 상위 10개 도서관',
+        '기술과학': '어린이 기술과학 인쇄자료 대출 상위 10개 도서관',
+        '예술': '어린이 예술 인쇄자료 대출 상위 10개 도서관',
+        '언어': '어린이 언어 인쇄자료 대출 상위 10개 도서관',
+        '문학': '어린이 문학 인쇄자료 대출 상위 10개 도서관',
+        '역사': '어린이 역사 인쇄자료 대출 상위 10개 도서관'
+      };
+
+      const label = genreLabels[genre] || `${genre} 인쇄자료 대출 상위 10개 도서관`;
+      
+      // 지도에 필터링된 도서관들 표시
+      window.MapView.showFilteredLibraries(libraries, `${label} (${libraries.length}개)`);
+    } else {
+      // 지도가 로드되지 않은 경우를 위한 대체 표시
+      console.log(`${genre} 장르 top 10 도서관:`, libraries);
+    }
   }
 
   // 전자자료 장르별 대출 랭킹 초기화
@@ -1524,15 +1579,42 @@ function initializeUI() {
 function initializeEventListeners() {
   document.getElementById('searchBtn').addEventListener('click', () => applyFilters());
   document.getElementById('searchInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') applyFilters(); });
-  document.getElementById('districtFilter').addEventListener('change', () => applyFilters());
-  // openNowToggle removed from UI
-  document.getElementById('sortSelect').addEventListener('change', (e) => { sortKey = e.target.value; applyFilters(); });
+  
+  // 전체 구 필터 이벤트 - 연령대 필터 초기화
+  document.getElementById('districtFilter').addEventListener('change', (e) => {
+    // 전체 구가 선택되면 연령대 필터 초기화
+    if (e.target.value) {
+      document.getElementById('ageFocus').value = '';
+      window.ageFocus = '';
+    }
+    applyFilters();
+  });
+
+  // 정렬 필터 이벤트 - 연령대 필터 초기화
+  document.getElementById('sortSelect').addEventListener('change', (e) => {
+    sortKey = e.target.value;
+    // 정렬이 선택되면 연령대 필터 초기화
+    if (e.target.value) {
+      document.getElementById('ageFocus').value = '';
+      window.ageFocus = '';
+    }
+    applyFilters();
+  });
+
   document.querySelector('.close').addEventListener('click', closeModal);
   window.addEventListener('click', (e) => { if (e.target === document.getElementById('detailModal')) closeModal(); });
 
   // 고급 필터 이벤트
   document.getElementById('ageFocus').addEventListener('change', (e) => { 
     window.ageFocus = e.target.value; // 전역 변수로 설정
+    
+    // 연령대 필터가 선택되면 다른 필터들 초기화
+    if (e.target.value) {
+      document.getElementById('districtFilter').value = '';
+      document.getElementById('sortSelect').value = '';
+      sortKey = '';
+    }
+    
     applyFilters(); 
   });
 
@@ -1858,15 +1940,27 @@ function applyFilters() {
 
 function displayLibraries() {
   const libraryList = document.getElementById('libraryList');
+  const libraryListInner = document.getElementById('libraryListInner');
+  
+  if (!libraryListInner) return;
+  
   // 업데이트 페이드 트랜지션
   libraryList.classList.add('fade-enter');
-  libraryList.innerHTML = '';
-  libraries.forEach((library, idx) => {
+  libraryListInner.innerHTML = '';
+  
+  // 연령대 집중 필터가 선택된 경우 필터링된 도서관들만 표시
+  let librariesToDisplay = libraries;
+  if (window.ageFocus && window.filteredLibraries) {
+    librariesToDisplay = window.filteredLibraries;
+  }
+  
+  librariesToDisplay.forEach((library, idx) => {
     const libraryItem = createLibraryItem(library);
     libraryItem.style.animationDelay = `${Math.min(idx*60, 600)}ms`;
     libraryItem.classList.add('appear');
-    libraryList.appendChild(libraryItem);
+    libraryListInner.appendChild(libraryItem);
   });
+  
   requestAnimationFrame(()=>{
     libraryList.classList.add('fade-enter-active');
     setTimeout(()=>{ libraryList.classList.remove('fade-enter','fade-enter-active'); }, 260);
