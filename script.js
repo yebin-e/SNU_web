@@ -30,8 +30,10 @@ const CSV_PATH = 'seoul_lib_preprocessed6.csv'; // 프로젝트 루트에 CSV �
 let introScreen = null;
 let middleScreen = null;
 let childrenPage = null;
+let genrePage = null;
 let hasScrolled = false;
 let currentStep = 'intro'; // 'intro', 'middle', 'main', 'children'
+let isTransitioning = false; // 스크롤 전환 중복 방지
 
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -42,7 +44,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   setupCategoryChips();
   // 지도 초기화 (파트너 모듈)
   if (window.MapView) {
-    MapView.init('map', { level: 7 });
+    MapView.init('map', { level: 8 });
     // 지도 초기화 후 폴리곤 로드
     setTimeout(() => {
       if (window.MapView && window.MapView.loadInitialPolygons) {
@@ -57,19 +59,15 @@ window.addEventListener('DOMContentLoaded', async () => {
 async function loadLibrariesFromCSV(){
   try{
     if (!window.d3 || !d3.csv) throw new Error('d3.csv not available');
-    console.log('Loading CSV from:', CSV_PATH);
     const rows = await d3.csv(CSV_PATH);
-    console.log('CSV loaded successfully, rows:', rows.length);
     let nextId = 1;
     const mapped = rows.map(r => mapCsvRowToLibrary(r, nextId++));
     // 필수 좌표/이름 없는 행 제외
     allLibraries = mapped.filter(l => l && l.name);
-    console.log('Filtered libraries:', allLibraries.length);
     // 전역 변수로 설정 (MapView에서 사용)
     window.allLibraries = allLibraries;
   }catch(e){
-    console.error('Error loading CSV:', e);
-    allLibraries = [];
+    allLibraries = [...sampleLibraries];
   }
 }
 
@@ -295,12 +293,7 @@ function mapCsvRowToLibrary(r, id){
     '전자자료_성인_역사': toNumber(r['전자자료_성인_역사']),
     
     // 개관시간 추가
-    '개관시간': r['개관시간'] || '',
-    
-    // 연령별 회원등록자 수 추가
-    '연령별회원등록자수_어린이': toNumber(r['연령별 회원등록자 수_어린이']),
-    '연령별회원등록자수_청소년': toNumber(r['연령별 회원등록자 수_청소년']),
-    '연령별회원등록자수_성인': toNumber(r['연령별 회원등록자 수_성인'])
+    '개관시간': r['개관시간'] || ''
   };
 }
 
@@ -308,12 +301,139 @@ function initializeIntroScreen() {
   introScreen = document.getElementById('introScreen');
   middleScreen = document.getElementById('middleScreen');
   childrenPage = document.getElementById('childrenPage');
+  genrePage = document.getElementById('genrePage');
   if (!introScreen || !middleScreen) return;
+
+  // 시네마틱 요소 참조 및 준비
+  const bg1 = document.querySelector('.cine-bg-1');
+  const bg2 = document.querySelector('.cine-bg-2');
+  const floatIconsContainer = document.querySelector('.float-icons');
+  const rings = Array.from(document.querySelectorAll('.rings3d .ring'));
+  const progressBar = null;
+  const mouseOverlay = document.querySelector('.mouse-gradient-overlay');
+  const enterCine = null;
+  const cineVignette = null;
+  const cineRays = null;
+  const cineFloor = null;
+
+  let introScrollAccum = 0;
+
+  function ensureFloatIcons(container){
+    if (!container) return;
+    if (container.children.length >= 20) return;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    for (let i = 0; i < 20; i++) {
+      const el = document.createElement('div');
+      el.className = 'fi';
+      const x = Math.random() * width;
+      const y = Math.random() * height;
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      // 반짝임 타이밍 다양화
+      el.style.setProperty('--twinkleDur', (1.8 + Math.random()*1.8).toFixed(2) + 's');
+      el.style.setProperty('--twinkleDelay', (Math.random()*1.2).toFixed(2) + 's');
+      container.appendChild(el);
+    }
+  }
+  ensureFloatIcons(floatIconsContainer);
+
+  function updateCinematic(scrollProgress, scrollY){
+    // 텍스트/UI 미세 이동 + 배경 레이어 동적 변환
+    const title = document.querySelector('.intro-title');
+    const subtitle = document.querySelector('.intro-subtitle');
+    const logo = document.querySelector('.library-icon');
+    const ty = scrollY * 0.05;
+    const sc = 1 + scrollProgress * 0.1;
+    if (title) title.style.transform = `translateY(${ty}px) scale(${sc})`;
+    if (subtitle) subtitle.style.transform = `translateY(${ty}px) scale(${sc})`;
+    if (logo) logo.style.transform = `translateY(${ty}px) scale(${sc})`;
+
+    const zoomScale = 1 + scrollProgress * 4;
+    if (bg1){
+      bg1.style.transform = `scale(${zoomScale}) translateY(${scrollY * 0.3}px) rotateX(${scrollProgress * 5}deg)`;
+      bg1.style.filter = `brightness(${0.4 + scrollProgress * 0.3}) saturate(${1 + scrollProgress * 0.5})`;
+    }
+    if (bg2){
+      const p2 = Math.max(0, (scrollProgress - 0.3) / 0.7);
+      bg2.style.opacity = String(p2);
+      bg2.style.transform = `scale(${1 + scrollProgress * 2}) translateY(${scrollY * 0.15}px) rotateX(${scrollProgress * 3}deg)`;
+      bg2.style.filter = `brightness(${0.6 + p2 * 0.4})`;
+    }
+
+    if (floatIconsContainer){
+      const nodes = Array.from(floatIconsContainer.children);
+      for (let i = 0; i < nodes.length; i++){
+        const n = nodes[i];
+        const dy = scrollY * (0.05 + i * 0.01);
+        const s = 0.3 + scrollProgress * 0.7;
+        const rot = i * 15;
+        n.style.transform = `translateY(${dy}px) scale(${s}) rotateZ(${rot}deg)`;
+      }
+    }
+
+    if (rings.length){
+      rings.forEach((r, i) => {
+        r.style.transform = `rotateX(${60 + i * 10}deg) rotateY(${scrollProgress * 360}deg)`;
+        r.style.opacity = String(0.25 + scrollProgress * 0.6);
+      });
+    }
+
+    // 마우스 오버레이 위치 업데이트(마우스 이동 이벤트에서 실시간 반영됨)
+
+    // 추가 시네마틱 제거됨
+  }
+
+  // 인트로 스크롤 진행도 → 문/바닥 애니메이션 업데이트
+  function handleIntroScroll(){
+    if (currentStep !== 'intro') return;
+    const total = Math.max(window.innerHeight * 2.2, 1); // 더 긴 거리에서 열리게
+    const y = Math.max(0, Math.min(window.scrollY || window.pageYOffset || 0, total));
+    const p = Math.min(y / total, 1);
+    updateCinematic(p, y);
+  }
+
+  // 초기 상태 적용
+  updateCinematic(0, 0);
+
+  // 마우스 인터랙션
+  let lastTrailTs = 0;
+  function handleMouseMove(e){
+    if (currentStep !== 'intro') return;
+    const now = performance.now();
+    if (mouseOverlay){
+      mouseOverlay.style.background = `radial-gradient(600px circle at ${e.clientX}px ${e.clientY}px, rgba(6,182,212,0.1), transparent 40%)`;
+    }
+    if (now - lastTrailTs > 16){
+      spawnTrail(e.clientX, e.clientY);
+      if (Math.random() < 0.1) spawnSparkle(e.clientX + (Math.random()*30-15), e.clientY + (Math.random()*30-15));
+      lastTrailTs = now;
+    }
+  }
+  function spawnTrail(x, y){
+    const el = document.createElement('div');
+    el.className = 'cursor-trail';
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    document.body.appendChild(el);
+    setTimeout(()=>{ el.remove(); }, 750);
+  }
+  function spawnSparkle(x, y){
+    const el = document.createElement('div');
+    el.className = 'sparkle';
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    document.body.appendChild(el);
+    setTimeout(()=>{ el.remove(); }, 850);
+  }
+  function enableIntroMouseFX(){ window.addEventListener('mousemove', handleMouseMove); }
+  function disableIntroMouseFX(){ window.removeEventListener('mousemove', handleMouseMove); }
+  enableIntroMouseFX();
 
   // 터치 이벤트 - 인트로에서만 작동
   function handleTouch(e) {
-    if (hasScrolled || currentStep !== 'intro') return;
-    showMiddleScreen();
+    // 클릭대신 스크롤 유도. 터치만으로는 넘어가지 않음 (스와이프 사용)
+    return;
   }
 
   // 클릭 이벤트 - 인트로에서만 작동
@@ -333,6 +453,91 @@ function initializeIntroScreen() {
       showMiddleScreen();
     }
   }
+
+  // 스크롤 기반 네비게이션
+  function onWheel(e) {
+    // 스크롤 네비게이션은 전체 화면 전환에만 개입
+    if (isTransitioning) return;
+
+    const delta = e.deltaY || 0;
+    // Intro 시 스크롤 진행도 계산 및 이펙트 업데이트
+    if (currentStep === 'intro') {
+      // 스크롤 이벤트에서 처리
+      return;
+    }
+    // Middle → Main (기본)
+    if (currentStep === 'middle' && delta > 10) {
+      e.preventDefault();
+      isTransitioning = true;
+      currentStep = 'main';
+      showMainScreen();
+      setTimeout(() => { isTransitioning = false; }, 900);
+      return;
+    }
+    // 상단에서 위로 스크롤 시 이전 화면으로 복귀
+    const atTop = (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
+    if (delta < -10 && atTop) {
+      if (currentStep === 'main') {
+        e.preventDefault();
+        isTransitioning = true;
+        hideMainScreen();
+        setTimeout(() => { isTransitioning = false; }, 700);
+      } else if (currentStep === 'children') {
+        e.preventDefault();
+        isTransitioning = true;
+        hideChildrenPage();
+        setTimeout(() => { isTransitioning = false; }, 900);
+      } else if (currentStep === 'genre') {
+        e.preventDefault();
+        isTransitioning = true;
+        hideGenrePage();
+        setTimeout(() => { isTransitioning = false; }, 900);
+      }
+    }
+  }
+
+  // 터치 스와이프(모바일) 기반 네비게이션
+  let touchStartY = null;
+  function onTouchStart(e) {
+    touchStartY = e.touches && e.touches.length ? e.touches[0].clientY : null;
+  }
+  function onTouchMove(e) {
+    if (isTransitioning || touchStartY === null) return;
+    const currentY = e.touches && e.touches.length ? e.touches[0].clientY : touchStartY;
+    const dy = touchStartY - currentY; // 양수면 위로 스와이프(다음 화면)
+
+    // Intro 스와이프 누적
+    if (currentStep === 'intro') {
+      // 기본 스크롤(스와이프) 허용
+      return;
+    }
+    // Middle → Main
+    if (currentStep === 'middle' && dy > 20) {
+      isTransitioning = true;
+      currentStep = 'main';
+      showMainScreen();
+      setTimeout(() => { isTransitioning = false; }, 900);
+      return;
+    }
+    // 상단에서 아래로 스와이프 시 이전 화면
+    const atTop = (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
+    if (dy < -20 && atTop) {
+      if (currentStep === 'main') {
+        isTransitioning = true;
+        hideMainScreen();
+        setTimeout(() => { isTransitioning = false; }, 700);
+      } else if (currentStep === 'children') {
+        isTransitioning = true;
+        hideChildrenPage();
+        setTimeout(() => { isTransitioning = false; }, 900);
+      } else if (currentStep === 'genre') {
+        isTransitioning = true;
+        hideGenrePage();
+        setTimeout(() => { isTransitioning = false; }, 900);
+      }
+    }
+  }
+  function onTouchEnd() { touchStartY = null; }
 
   // 메뉴 버튼 이벤트
   function setupMenuButtons() {
@@ -406,105 +611,89 @@ function initializeIntroScreen() {
 
   // 어린이 페이지 표시
   function showChildrenPage() {
-    middleScreen.classList.add('hidden');
-    childrenPage.style.display = 'block';
-    
-    setTimeout(() => {
-      middleScreen.style.display = 'none';
-      loadChildrenData(); // 어린이 데이터 로드
-    }, 800);
+    // 중간 화면은 상단에 유지하고, 선택한 페이지만 아래에 표시
+    const container = document.querySelector('.container');
+    const backToMenu = document.getElementById('backToMenu');
+    if (container) container.style.display = 'none';
+    if (genrePage) genrePage.style.display = 'none';
+    if (childrenPage) {
+      childrenPage.style.display = 'block';
+      loadChildrenData();
+    }
+    if (middleScreen) middleScreen.style.display = 'flex';
+    if (backToMenu) backToMenu.style.display = 'none';
+    if (childrenPage) childrenPage.scrollIntoView({ behavior: 'smooth' });
   }
 
   // 어린이 페이지 숨기기
   function hideChildrenPage() {
-    childrenPage.classList.add('hidden');
-    middleScreen.style.display = 'flex';
-    middleScreen.classList.remove('hidden');
-    
-    setTimeout(() => {
-      childrenPage.style.display = 'none';
-      childrenPage.classList.remove('hidden');
-    }, 800);
+    if (childrenPage) childrenPage.style.display = 'none';
+    if (middleScreen) {
+      middleScreen.style.display = 'flex';
+    }
   }
   
   // 장르 페이지 표시
   function showGenrePage() {
-    middleScreen.classList.add('hidden');
-    genrePage.style.display = 'block';
-    
-    setTimeout(() => {
-      middleScreen.style.display = 'none';
-      loadGenreData(); // 장르 데이터 로드
-    }, 800);
+    // 중간 화면은 상단에 유지하고, 선택한 페이지만 아래에 표시
+    const container = document.querySelector('.container');
+    const backToMenu = document.getElementById('backToMenu');
+    if (container) container.style.display = 'none';
+    if (childrenPage) childrenPage.style.display = 'none';
+    if (genrePage) {
+      genrePage.style.display = 'block';
+      loadGenreData();
+    }
+    if (middleScreen) middleScreen.style.display = 'flex';
+    if (backToMenu) backToMenu.style.display = 'none';
+    if (genrePage) genrePage.scrollIntoView({ behavior: 'smooth' });
   }
   
   // 장르 페이지 숨기기
   function hideGenrePage() {
-    genrePage.classList.add('hidden');
-    middleScreen.style.display = 'flex';
-    middleScreen.classList.remove('hidden');
-    
-    setTimeout(() => {
-      genrePage.style.display = 'none';
-      genrePage.classList.remove('hidden');
-    }, 800);
+    if (genrePage) genrePage.style.display = 'none';
+    if (middleScreen) {
+      middleScreen.style.display = 'flex';
+    }
   }
 
   // 메인 화면 표시
   function showMainScreen() {
     hasScrolled = true;
-    
-    // 메인 화면을 미리 준비
     const container = document.querySelector('.container');
     const backToMenu = document.getElementById('backToMenu');
-    container.classList.add('show');
-    
-    // 돌아가기 버튼 표시
-    if (backToMenu) {
-      backToMenu.style.display = 'block';
+    // 중간 화면은 상단에 유지하고, 메인만 아래에 표시
+    if (childrenPage) childrenPage.style.display = 'none';
+    if (genrePage) genrePage.style.display = 'none';
+    if (container) {
+      container.style.display = 'block';
+      container.classList.add('show');
     }
-    
-    // 중간 화면 숨기기
-    middleScreen.classList.add('hidden');
-    
-    setTimeout(() => {
-      middleScreen.style.display = 'none';
-      window.scrollTo(0, 0);
-      // 이벤트 리스너 제거
-      window.removeEventListener('touchstart', handleTouch);
-      window.removeEventListener('click', handleClick);
-      window.removeEventListener('keydown', handleKeyDown);
-    }, 800);
+    if (middleScreen) middleScreen.style.display = 'flex';
+    if (backToMenu) backToMenu.style.display = 'none';
+    if (container) container.scrollIntoView({ behavior: 'smooth' });
   }
+
+  // 중간 화면이 초기부터 보이는 구성에서는 메뉴 버튼 이벤트를 즉시 설정
+  try { setupMenuButtons(); } catch (e) { /* 초기 호출 실패 무시 */ }
 
   // 메인 화면 숨기기
   function hideMainScreen() {
     const container = document.querySelector('.container');
     const backToMenu = document.getElementById('backToMenu');
-    
-    // 돌아가기 버튼 숨기기
-    if (backToMenu) {
-      backToMenu.style.display = 'none';
+    if (container) container.style.display = 'none';
+    if (backToMenu) backToMenu.style.display = 'none';
+    if (middleScreen) {
+      middleScreen.style.display = 'flex';
     }
-    
-    // 메인 화면 숨기기
-    container.classList.remove('show');
-    
-    // 중간 화면 다시 표시
-    middleScreen.style.display = 'flex';
-    middleScreen.classList.remove('hidden');
-    
-    setTimeout(() => {
-      // 상태 초기화
-      hasScrolled = false;
-      currentStep = 'middle';
-    }, 300);
+    hasScrolled = false;
+    currentStep = 'middle';
   }
 
-  // 이벤트 리스너 등록 - 터치와 클릭만
-  window.addEventListener('touchstart', handleTouch, { passive: true });
-  window.addEventListener('click', handleClick);
+  // 이벤트 리스너 등록
+  // 인트로: 스크롤로 자연스럽게 아래 섹션 노출, 키보드로도 가능
   window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('scroll', handleIntroScroll, { passive: true });
 
   // 3초 후 자동으로 스킵 힌트 표시 (선택적)
   setTimeout(() => {
@@ -534,7 +723,7 @@ function initializeIntroScreen() {
 
   // 어린이 데이터 로드 함수
   function loadChildrenData() {
-    const allLibs = allLibraries;
+    const allLibs = allLibraries.length ? allLibraries : sampleLibraries;
     
     // 어린이실 보유 도서관 필터링
     const childrenLibraries = allLibs.filter(lib => lib.hasChildrenRoom);
@@ -906,7 +1095,7 @@ function initializeIntroScreen() {
   
   // 국내서 랭킹 표시
   function showDomesticRanking(genre) {
-    const allLibs = allLibraries;
+    const allLibs = allLibraries.length ? allLibraries : sampleLibraries;
     const rankingList = document.getElementById('domesticRankingList');
     
     if (!rankingList) return;
@@ -964,7 +1153,7 @@ function initializeIntroScreen() {
   
   // 국외서 랭킹 표시
   function showForeignRanking(genre) {
-    const allLibs = allLibraries;
+    const allLibs = allLibraries.length ? allLibraries : sampleLibraries;
     const rankingList = document.getElementById('foreignRankingList');
     
     if (!rankingList) return;
@@ -1022,7 +1211,7 @@ function initializeIntroScreen() {
   
   // 인쇄자료 연령대별 랭킹 표시
   function showPrintAgeRanking(age) {
-    const allLibs = allLibraries;
+    const allLibs = allLibraries.length ? allLibraries : sampleLibraries;
     const rankingList = document.getElementById('printAgeRankingList');
     
     if (!rankingList) return;
@@ -1071,7 +1260,7 @@ function initializeIntroScreen() {
   
   // 전자자료 연령대별 랭킹 표시
   function showElectronicAgeRanking(age) {
-    const allLibs = allLibraries;
+    const allLibs = allLibraries.length ? allLibraries : sampleLibraries;
     const rankingList = document.getElementById('electronicAgeRankingList');
     
     if (!rankingList) return;
@@ -1577,7 +1766,7 @@ function isOpenNow(library) {
 function applyFilters() {
   const term = document.getElementById('searchInput').value.toLowerCase().trim();
   const district = document.getElementById('districtFilter').value;
-  let result = [...allLibraries];
+  let result = [...(allLibraries.length ? allLibraries : sampleLibraries)];
 
   // 기본 필터
   if (district) result = result.filter((l) => (l.district||'').includes(district));
@@ -1655,6 +1844,7 @@ function applyFilters() {
     result = ageRatios.slice(0, 10).map(item => item.library);
   }
 
+
   // 정렬
   switch (sortKey) {
     case 'holdingsDesc': result.sort((a,b) => ((a.holdingsDomestic||0)+(a.holdingsForeign||0)) < ((b.holdingsDomestic||0)+(b.holdingsForeign||0)) ? 1 : -1); break;
@@ -1680,20 +1870,10 @@ function applyFilters() {
   } else {
     window.filteredLibraries = null;
   }
-  
   displayLibraries();
   renderStats(result);
   // 지도 렌더 (파트너 모듈)
-  if (window.MapView) {
-    // 디버깅: 좌표 데이터 확인
-    console.log('Filtered libraries:', result.length);
-    console.log('Sample library coordinates:', result.slice(0, 3).map(l => ({
-      name: l.name,
-      lat: l.lat,
-      lng: l.lng
-    })));
-    MapView.render(libraries);
-  }
+  if (window.MapView) MapView.render(libraries);
 }
 
 function displayLibraries() {
