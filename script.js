@@ -57,15 +57,19 @@ window.addEventListener('DOMContentLoaded', async () => {
 async function loadLibrariesFromCSV(){
   try{
     if (!window.d3 || !d3.csv) throw new Error('d3.csv not available');
+    console.log('Loading CSV from:', CSV_PATH);
     const rows = await d3.csv(CSV_PATH);
+    console.log('CSV loaded successfully, rows:', rows.length);
     let nextId = 1;
     const mapped = rows.map(r => mapCsvRowToLibrary(r, nextId++));
     // 필수 좌표/이름 없는 행 제외
     allLibraries = mapped.filter(l => l && l.name);
+    console.log('Filtered libraries:', allLibraries.length);
     // 전역 변수로 설정 (MapView에서 사용)
     window.allLibraries = allLibraries;
   }catch(e){
-    allLibraries = [...sampleLibraries];
+    console.error('Error loading CSV:', e);
+    allLibraries = [];
   }
 }
 
@@ -291,7 +295,12 @@ function mapCsvRowToLibrary(r, id){
     '전자자료_성인_역사': toNumber(r['전자자료_성인_역사']),
     
     // 개관시간 추가
-    '개관시간': r['개관시간'] || ''
+    '개관시간': r['개관시간'] || '',
+    
+    // 연령별 회원등록자 수 추가
+    '연령별회원등록자수_어린이': toNumber(r['연령별 회원등록자 수_어린이']),
+    '연령별회원등록자수_청소년': toNumber(r['연령별 회원등록자 수_청소년']),
+    '연령별회원등록자수_성인': toNumber(r['연령별 회원등록자 수_성인'])
   };
 }
 
@@ -525,7 +534,7 @@ function initializeIntroScreen() {
 
   // 어린이 데이터 로드 함수
   function loadChildrenData() {
-    const allLibs = allLibraries.length ? allLibraries : sampleLibraries;
+    const allLibs = allLibraries;
     
     // 어린이실 보유 도서관 필터링
     const childrenLibraries = allLibs.filter(lib => lib.hasChildrenRoom);
@@ -897,7 +906,7 @@ function initializeIntroScreen() {
   
   // 국내서 랭킹 표시
   function showDomesticRanking(genre) {
-    const allLibs = allLibraries.length ? allLibraries : sampleLibraries;
+    const allLibs = allLibraries;
     const rankingList = document.getElementById('domesticRankingList');
     
     if (!rankingList) return;
@@ -955,7 +964,7 @@ function initializeIntroScreen() {
   
   // 국외서 랭킹 표시
   function showForeignRanking(genre) {
-    const allLibs = allLibraries.length ? allLibraries : sampleLibraries;
+    const allLibs = allLibraries;
     const rankingList = document.getElementById('foreignRankingList');
     
     if (!rankingList) return;
@@ -1013,7 +1022,7 @@ function initializeIntroScreen() {
   
   // 인쇄자료 연령대별 랭킹 표시
   function showPrintAgeRanking(age) {
-    const allLibs = allLibraries.length ? allLibraries : sampleLibraries;
+    const allLibs = allLibraries;
     const rankingList = document.getElementById('printAgeRankingList');
     
     if (!rankingList) return;
@@ -1062,7 +1071,7 @@ function initializeIntroScreen() {
   
   // 전자자료 연령대별 랭킹 표시
   function showElectronicAgeRanking(age) {
-    const allLibs = allLibraries.length ? allLibraries : sampleLibraries;
+    const allLibs = allLibraries;
     const rankingList = document.getElementById('electronicAgeRankingList');
     
     if (!rankingList) return;
@@ -1333,7 +1342,11 @@ function initializeEventListeners() {
   document.getElementById('minSeatsSenior').addEventListener('input', (e) => { minSeatsSenior = e.target.value; applyFilters(); });
   document.getElementById('minEUse').addEventListener('input', (e) => { minEUse = e.target.value; applyFilters(); });
   document.getElementById('hasChildrenRoom').addEventListener('change', (e) => { hasChildrenRoom = e.target.checked; applyFilters(); });
-  document.getElementById('ageFocus').addEventListener('change', (e) => { ageFocus = e.target.value; applyFilters(); });
+  document.getElementById('ageFocus').addEventListener('change', (e) => { 
+    ageFocus = e.target.value; 
+    window.ageFocus = e.target.value; // 전역 변수로 설정
+    applyFilters(); 
+  });
   document.getElementById('subjectSort').addEventListener('change', (e) => { subjectSort = e.target.value; applyFilters(); });
 
   // 뷰 전환
@@ -1564,7 +1577,7 @@ function isOpenNow(library) {
 function applyFilters() {
   const term = document.getElementById('searchInput').value.toLowerCase().trim();
   const district = document.getElementById('districtFilter').value;
-  let result = [...(allLibraries.length ? allLibraries : sampleLibraries)];
+  let result = [...allLibraries];
 
   // 기본 필터
   if (district) result = result.filter((l) => (l.district||'').includes(district));
@@ -1604,14 +1617,42 @@ function applyFilters() {
   if (minEUse) result = result.filter((l) => (l.eUseTotal||0) >= Number(minEUse));
   if (hasChildrenRoom) result = result.filter((l) => !!l.hasChildrenRoom);
   if (ageFocus) {
-    result = result.filter((l) => {
-      const c = l.loansPrintChild||0, t = l.loansPrintTeen||0, a = l.loansPrintAdult||0;
-      const max = Math.max(c,t,a);
-      if (ageFocus === 'child') return max === c;
-      if (ageFocus === 'teen') return max === t;
-      if (ageFocus === 'adult') return max === a;
-      return true;
+    // 연령별 회원등록자 수 비율 계산 및 상위 10개 선택
+    const ageRatios = result.map((l) => {
+      const childMembers = l.연령별회원등록자수_어린이 || 0;
+      const teenMembers = l.연령별회원등록자수_청소년 || 0;
+      const adultMembers = l.연령별회원등록자수_성인 || 0;
+      const totalMembers = childMembers + teenMembers + adultMembers;
+      
+      let ratio = 0;
+      if (ageFocus === 'child') {
+        ratio = totalMembers > 0 ? childMembers / totalMembers : 0;
+      } else if (ageFocus === 'teen') {
+        ratio = totalMembers > 0 ? teenMembers / totalMembers : 0;
+      } else if (ageFocus === 'adult') {
+        ratio = totalMembers > 0 ? adultMembers / totalMembers : 0;
+      }
+      
+      return { library: l, ratio: ratio };
     });
+    
+    // 디버깅: 비율 계산 결과 확인
+    console.log('Age focus:', ageFocus);
+    console.log('Age ratios (top 5):', ageRatios
+      .sort((a, b) => b.ratio - a.ratio)
+      .slice(0, 5)
+      .map(item => ({
+        name: item.library.name,
+        ratio: item.ratio.toFixed(3),
+        child: item.library.연령별회원등록자수_어린이 || 0,
+        teen: item.library.연령별회원등록자수_청소년 || 0,
+        adult: item.library.연령별회원등록자수_성인 || 0
+      }))
+    );
+    
+    // 비율 기준으로 내림차순 정렬 후 상위 10개 선택
+    ageRatios.sort((a, b) => b.ratio - a.ratio);
+    result = ageRatios.slice(0, 10).map(item => item.library);
   }
 
   // 정렬
@@ -1635,7 +1676,16 @@ function applyFilters() {
   displayLibraries();
   renderStats(result);
   // 지도 렌더 (파트너 모듈)
-  if (window.MapView) MapView.render(libraries);
+  if (window.MapView) {
+    // 디버깅: 좌표 데이터 확인
+    console.log('Filtered libraries:', result.length);
+    console.log('Sample library coordinates:', result.slice(0, 3).map(l => ({
+      name: l.name,
+      lat: l.lat,
+      lng: l.lng
+    })));
+    MapView.render(libraries);
+  }
 }
 
 function displayLibraries() {
