@@ -16,7 +16,7 @@ let minSeatsChild = '';
 let minSeatsSenior = '';
 let minEUse = '';
 let hasChildrenRoom = false;
-let ageFocus = '';
+window.ageFocus = '';
 let subjectSort = '';
 
 // 장르별 필터링 상태
@@ -41,7 +41,15 @@ window.addEventListener('DOMContentLoaded', async () => {
   initializeEventListeners();
   setupCategoryChips();
   // 지도 초기화 (파트너 모듈)
-  if (window.MapView) MapView.init('map', { initialLevel: 10 });
+  if (window.MapView) {
+    MapView.init('map', { level: 8 });
+    // 지도 초기화 후 폴리곤 로드
+    setTimeout(() => {
+      if (window.MapView && window.MapView.loadInitialPolygons) {
+        window.MapView.loadInitialPolygons();
+      }
+    }, 1000);
+  }
   await loadLibrariesFromCSV();
   applyFilters();
 });
