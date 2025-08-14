@@ -1531,7 +1531,11 @@ function initializeEventListeners() {
   document.getElementById('minSeatsSenior').addEventListener('input', (e) => { minSeatsSenior = e.target.value; applyFilters(); });
   document.getElementById('minEUse').addEventListener('input', (e) => { minEUse = e.target.value; applyFilters(); });
   document.getElementById('hasChildrenRoom').addEventListener('change', (e) => { hasChildrenRoom = e.target.checked; applyFilters(); });
-  document.getElementById('ageFocus').addEventListener('change', (e) => { ageFocus = e.target.value; applyFilters(); });
+  document.getElementById('ageFocus').addEventListener('change', (e) => { 
+    ageFocus = e.target.value; 
+    window.ageFocus = e.target.value; // 전역 변수로 설정
+    applyFilters(); 
+  });
   document.getElementById('subjectSort').addEventListener('change', (e) => { subjectSort = e.target.value; applyFilters(); });
 
   // 뷰 전환
@@ -1802,15 +1806,44 @@ function applyFilters() {
   if (minEUse) result = result.filter((l) => (l.eUseTotal||0) >= Number(minEUse));
   if (hasChildrenRoom) result = result.filter((l) => !!l.hasChildrenRoom);
   if (ageFocus) {
-    result = result.filter((l) => {
-      const c = l.loansPrintChild||0, t = l.loansPrintTeen||0, a = l.loansPrintAdult||0;
-      const max = Math.max(c,t,a);
-      if (ageFocus === 'child') return max === c;
-      if (ageFocus === 'teen') return max === t;
-      if (ageFocus === 'adult') return max === a;
-      return true;
+    // 연령별 회원등록자 수 비율 계산 및 상위 10개 선택
+    const ageRatios = result.map((l) => {
+      const childMembers = l.연령별회원등록자수_어린이 || 0;
+      const teenMembers = l.연령별회원등록자수_청소년 || 0;
+      const adultMembers = l.연령별회원등록자수_성인 || 0;
+      const totalMembers = childMembers + teenMembers + adultMembers;
+      
+      let ratio = 0;
+      if (ageFocus === 'child') {
+        ratio = totalMembers > 0 ? childMembers / totalMembers : 0;
+      } else if (ageFocus === 'teen') {
+        ratio = totalMembers > 0 ? teenMembers / totalMembers : 0;
+      } else if (ageFocus === 'adult') {
+        ratio = totalMembers > 0 ? adultMembers / totalMembers : 0;
+      }
+      
+      return { library: l, ratio: ratio };
     });
+    
+    // 디버깅: 비율 계산 결과 확인
+    console.log('Age focus:', ageFocus);
+    console.log('Age ratios (top 5):', ageRatios
+      .sort((a, b) => b.ratio - a.ratio)
+      .slice(0, 5)
+      .map(item => ({
+        name: item.library.name,
+        ratio: item.ratio.toFixed(3),
+        child: item.library.연령별회원등록자수_어린이 || 0,
+        teen: item.library.연령별회원등록자수_청소년 || 0,
+        adult: item.library.연령별회원등록자수_성인 || 0
+      }))
+    );
+    
+    // 비율 기준으로 내림차순 정렬 후 상위 10개 선택
+    ageRatios.sort((a, b) => b.ratio - a.ratio);
+    result = ageRatios.slice(0, 10).map(item => item.library);
   }
+
 
   // 정렬
   switch (sortKey) {
@@ -1830,6 +1863,13 @@ function applyFilters() {
   }
 
   libraries = result;
+  
+  // ageFocus로 필터된 경우 전역 변수에 저장 (팝업에서 순위 계산용)
+  if (ageFocus) {
+    window.filteredLibraries = result;
+  } else {
+    window.filteredLibraries = null;
+  }
   displayLibraries();
   renderStats(result);
   // 지도 렌더 (파트너 모듈)
