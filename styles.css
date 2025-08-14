@@ -11,9 +11,6 @@
     --button: #8b5e3c; /* 갈색 버튼 */
     --button-dark: #71492f;
     --accent: #10b981;
-    --cluster-bg: #ff6b6b;
-    --cluster-text: #ffffff;
-    --cluster-border: #e74c3c;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -952,14 +949,12 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-
     align-items: center;
     justify-content: center;
     opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transition: opacity 0.3s ease;
     backdrop-filter: blur(5px);
 }
 
 .children-modal-overlay.show {
     opacity: 1;
-    visibility: visible;
 }
 
 .children-modal-content {
@@ -973,8 +968,6 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-
     border: 2px solid rgba(139, 94, 60, 0.2);
     transform: scale(0.9);
     transition: transform 0.3s ease;
-    position: relative;
-    z-index: 10001;
 }
 
 .children-modal-overlay.show .children-modal-content {
@@ -1200,57 +1193,6 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-
 .library-info { font-size: 0.92rem; color: #4b5563; line-height: 1.5; }
 .library-status { display: inline-block; padding: 0.25rem 0.5rem; background-color: #ecfdf5; color: #065f46; border: 1px solid #d1fae5; border-radius: 999px; font-size: 0.8rem; margin-top: 0.5rem; animation: pulseGlow 1.8s ease-in-out infinite; }
 
-/* 쾌적함 정보 스타일 */
-.library-comfort {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0.5rem 0;
-  padding: 0.5rem;
-  background: #f8fafc;
-  border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
-}
-
-.comfort-label {
-  font-size: 0.875rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.comfort-level {
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-align: center;
-  min-width: 3rem;
-}
-
-.comfort-매우좋음 {
-  background: #dcfce7;
-  color: #166534;
-  border: 1px solid #bbf7d0;
-}
-
-.comfort-좋음 {
-  background: #dbeafe;
-  color: #1e40af;
-  border: 1px solid #bfdbfe;
-}
-
-.comfort-보통 {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
-}
-
-.comfort-좁음 {
-  background: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
-}
-
 /* 모달 (트랜지션) */
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.4); }
 .modal-content { background-color: var(--surface); margin: 5% auto; padding: 2rem; border-radius: 12px; width: 80%; max-width: 640px; max-height: 80vh; overflow-y: auto; position: relative; border: 1px solid var(--border); transform: scale(.96); opacity: 0; transition: transform .2s ease, opacity .2s ease; }
@@ -1345,20 +1287,6 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-
     
     .info-value {
         text-align: left;
-    }
-    
-    /* 쾌적함 정보 모바일 최적화 */
-    .library-comfort {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.3rem;
-        padding: 0.4rem;
-    }
-    
-    .comfort-level {
-        min-width: auto;
-        padding: 0.2rem 0.4rem;
-        font-size: 0.7rem;
     }
     
     /* 장르 랭킹 모바일 최적화 */
@@ -1643,7 +1571,6 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-
 .stat-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:.75rem}
 .stat-title{font-size:.8rem;color:#6b7280}
 .stat-value{font-weight:700;color:#111827;margin-top:.25rem}
-.stat-subtitle{font-size:.75rem;color:#6b7280;margin-top:.25rem;text-align:center}
 
 /* 차트 섹션 */
 .charts{margin-top:1rem;display:grid;grid-template-columns:1fr;gap:1rem}
@@ -1737,81 +1664,52 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-
 .ko-popup .btn.primary{background:#8b5e3c;color:#fff;border-color:#8b5e3c}
 }
 
-/* 구별 클러스터 스타일 */
-.area-cluster {
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-align: center;
-}
+.emoji-character {
+    font-size: 28px;
+    line-height: 1;
+    animation-fill-mode: forwards;
+    opacity: 0;
+    transform: translateY(40px);
+    pointer-events: none;
+  }
+  
+@keyframes runAndStand {
+    0% {
+      opacity: 0;
+      transform: translateY(40px) scale(0.8);
+    }
+    60% {
+      opacity: 1;
+      transform: translateY(-10px) scale(1.2);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0px) scale(1);
+    }
+  }
 
-.area-cluster:hover {
-    transform: scale(1.1);
-}
-
-.cluster-circle {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: var(--cluster-bg);
-    border: 3px solid var(--cluster-border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 5px;
-    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
-    transition: all 0.3s ease;
-}
-
-.area-cluster:hover .cluster-circle {
-    background: #e74c3c;
-    box-shadow: 0 6px 16px rgba(231, 76, 60, 0.4);
-}
-
-.cluster-count {
-    color: var(--cluster-text);
-    font-weight: bold;
-    font-size: 18px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.cluster-label {
-    color: var(--text);
-    font-size: 12px;
-    font-weight: 600;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 4px 8px;
-    border-radius: 12px;
-    white-space: nowrap;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(4px);
-}
-
-/* 클러스터 크기별 스타일 */
-.cluster-circle.small {
-    width: 40px;
-    height: 40px;
-}
-
-.cluster-circle.small .cluster-count {
-    font-size: 14px;
-}
-
-.cluster-circle.large {
-    width: 80px;
-    height: 80px;
-}
-
-.cluster-circle.large .cluster-count {
-    font-size: 24px;
-}
-
-/* 애니메이션 */
-@keyframes clusterPulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
-
-.area-cluster.new {
-    animation: clusterPulse 0.6s ease-in-out;
-}
+  .character-wrapper {
+    position: absolute;
+    z-index: 999;
+    will-change: transform;
+  }
+  
+  .run-character img {
+    animation: bounce-run 0.4s infinite;
+  }
+  
+  .walk-character img {
+    animation: bounce-walk 1s infinite;
+  }
+  
+  @keyframes bounce-run {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  
+  @keyframes bounce-walk {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+  
+  
