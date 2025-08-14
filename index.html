@@ -196,20 +196,7 @@
                     <p>어린이실을 보유하고 어린이 프로그램이 풍부한 도서관들을 소개합니다.</p>
                 </div>
                 
-                <div class="children-stats">
-                    <div class="stat-card">
-                        <div class="stat-number" id="childrenLibraryCount">0</div>
-                        <div class="stat-label">어린이실 보유 도서관</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="avgChildSeats">0</div>
-                        <div class="stat-label">평균 어린이 좌석 수</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="avgChildrenHoldings">0</div>
-                        <div class="stat-label">평균 어린이 보유도서</div>
-                    </div>
-                </div>
+
                 
                 <div class="children-library-section">
                     <h3>🌟 어린이 시설이 잘 갖춰진 도서관</h3>
@@ -283,7 +270,7 @@
                 <input type="text" id="searchInput" placeholder="도서관명 또는 지역을 검색하세요...">
                 <button id="searchBtn">검색</button>
             </div>
-            <div class="category-bar">
+                        <div class="category-bar">
                 <div class="category-group">
                     <div class="category-title">도서 종류</div>
                     <!-- 1단계: 국내서/국외서 선택 -->
@@ -320,12 +307,12 @@
                     </div>
                 </div>
                 <div class="category-group">
-                    <div class="category-title">공부 공간</div>
+                    <div class="category-title">좌석혼잡도</div>
                     <div class="category-chips" id="studyCategoryChips">
-                        <button class="chip" data-type="study" data-value="조용">조용한 공간</button>
-                        <button class="chip" data-type="study" data-value="테이블">테이블 넉넉</button>
-                        <button class="chip" data-type="study" data-value="룸">스터디룸</button>
-                        <button class="chip" data-type="study" data-value="콘센트">콘센트 많음</button>
+                        <button class="chip" data-type="study" data-value="매우혼잡">매우 혼잡</button>
+                        <button class="chip" data-type="study" data-value="혼잡">혼잡</button>
+                        <button class="chip" data-type="study" data-value="보통">보통</button>
+                        <button class="chip" data-type="study" data-value="여유">여유</button>
                     </div>
                 </div>
                 <div class="category-group">
@@ -393,30 +380,6 @@
                             <option value="yearDesc">개관년도 최신 순</option>
                             <option value="yearAsc">개관년도 오래된 순</option>
                         </select>
-                    </div>
-                    
-                </div>
-
-                <div class="filter-section-title">상세 필터</div>
-                <div class="advanced-filters sidebar-section">
-                    <div class="af-row">
-                        <label>총 좌석 ≥</label>
-                        <input type="number" id="minSeatsTotal" placeholder="예: 100">
-                    </div>
-                    <div class="af-row">
-                        <label>어린이 좌석 ≥</label>
-                        <input type="number" id="minSeatsChild" placeholder="예: 20">
-                    </div>
-                    <div class="af-row">
-                        <label>노인/장애인 좌석 ≥</label>
-                        <input type="number" id="minSeatsSenior" placeholder="예: 10">
-                    </div>
-                    <div class="af-row">
-                        <label>전자자료 이용 ≥</label>
-                        <input type="number" id="minEUse" placeholder="예: 100000">
-                    </div>
-                    <div class="af-row">
-                        <label class="checkbox-label"><input type="checkbox" id="hasChildrenRoom"> 어린이실 보유</label>
                         <select id="ageFocus" class="mini-select">
                             <option value="">연령대 집중 없음</option>
                             <option value="child">어린이 이용 많음</option>
@@ -424,24 +387,9 @@
                             <option value="adult">성인 이용 많음</option>
                         </select>
                     </div>
-                    <div class="af-row">
-                        <label>주제 정렬</label>
-                        <select id="subjectSort" class="mini-select">
-                            <option value="">선택 없음</option>
-                            <option value="총류">총류</option>
-                            <option value="철학">철학</option>
-                            <option value="종교">종교</option>
-                            <option value="사회과학">사회과학</option>
-                            <option value="순수과학">순수과학</option>
-                            <option value="기술과학">기술과학</option>
-                            <option value="예술">예술</option>
-                            <option value="언어">언어</option>
-                            <option value="문학">문학</option>
-                            <option value="역사">역사</option>
-                        </select>
-                    </div>
+                    
                 </div>
-                <div class="stats-bar" id="statsBar"></div>
+
                 <div class="library-list-wrap sidebar-section">
                     
                     <div class="library-list" id="libraryList"></div>
