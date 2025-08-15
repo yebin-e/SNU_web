@@ -2169,3 +2169,69 @@ function scrollToMap() {
     });
   }
 }
+
+// 어린이 도서관 추천 기능
+function showQuietLibraries() {
+  const allLibs = allLibraries.length ? allLibraries : sampleLibraries;
+  
+  // 어린이실 보유 도서관 필터링
+  const childrenLibraries = allLibs.filter(lib => lib.hasChildrenRoom);
+  
+  // 어린이 자료 보유량 기준으로 상위 20개 선택 후 대출수가 적은 순으로 정렬
+  const sortedLibraries = childrenLibraries
+    .sort((a, b) => (b['어린이 자료(인쇄)수'] || 0) - (a['어린이 자료(인쇄)수'] || 0))
+    .slice(0, 20)
+    .sort((a, b) => (a['인쇄자료_대출_어린이'] || 0) - (b['인쇄자료_대출_어린이'] || 0));
+  
+  displayRecommendationResults('📚 대출이 여유로운 도서관 (어린이 도서 상위 20개 & 대출수 적은 순)', sortedLibraries);
+}
+
+function showPopularLibraries() {
+  const allLibs = allLibraries.length ? allLibraries : sampleLibraries;
+  
+  // 어린이실 보유 도서관 필터링
+  const childrenLibraries = allLibs.filter(lib => lib.hasChildrenRoom);
+  
+  // 어린이 자료 보유량 기준으로 상위 20개 선택 후 대출수가 많은 순으로 정렬
+  const sortedLibraries = childrenLibraries
+    .sort((a, b) => (b['어린이 자료(인쇄)수'] || 0) - (a['어린이 자료(인쇄)수'] || 0))
+    .slice(0, 20)
+    .sort((a, b) => (b['인쇄자료_대출_어린이'] || 0) - (a['인쇄자료_대출_어린이'] || 0));
+  
+  displayRecommendationResults('⭐ 인기 많은 도서관 (어린이 도서 상위 20개 & 대출수 많은 순)', sortedLibraries);
+}
+
+function displayRecommendationResults(title, libraries) {
+  const resultsContainer = document.getElementById('recommendationResults');
+  const resultsTitle = document.getElementById('resultsTitle');
+  const resultsList = document.getElementById('resultsList');
+  
+  resultsTitle.textContent = title;
+  
+  resultsList.innerHTML = libraries.map((lib, index) => `
+    <div class="recommendation-library-item" onclick="showChildrenLibraryModal(${lib.id || index})">
+      <div class="recommendation-library-rank">${index + 1}</div>
+      <div class="recommendation-library-info">
+        <div class="recommendation-library-name">${lib.name}</div>
+        <div class="recommendation-library-address">${lib.address || '주소 정보 없음'}</div>
+        <div class="recommendation-library-stats">
+          <span class="stat">
+            <span class="stat-value">${(lib['어린이 자료(인쇄)수'] || 0).toLocaleString()}</span>
+            <span class="stat-label">보유도서</span>
+          </span>
+          <span class="stat">
+            <span class="stat-value">${(lib['인쇄자료_대출_어린이'] || 0).toLocaleString()}</span>
+            <span class="stat-label">대출수</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  
+  resultsContainer.style.display = 'block';
+}
+
+function closeRecommendationResults() {
+  const resultsContainer = document.getElementById('recommendationResults');
+  resultsContainer.style.display = 'none';
+}
