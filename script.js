@@ -1731,6 +1731,8 @@ function setupCategoryChips() {
         selectedBookCategories.add(value);
         // 장르별 지도 필터링 적용
         filterLibrariesByGenre(selectedBookType, value);
+        // 지도로 스크롤
+        scrollToMap();
       } else {
         selectedBookCategories.delete(value);
         // 선택 해제시 전체 도서관 표시
@@ -1742,6 +1744,8 @@ function setupCategoryChips() {
       btn.classList.toggle('active');
       if (btn.classList.contains('active')) {
         selectedElectronicCategories.add(value);
+        // 지도로 스크롤
+        scrollToMap();
       } else {
         selectedElectronicCategories.delete(value);
       }
@@ -1752,21 +1756,30 @@ function setupCategoryChips() {
         if (btn.classList.contains('active')) {
           if (!window.selectedStudyCategories) window.selectedStudyCategories = new Set();
           window.selectedStudyCategories.add(value);
+          // 지도로 스크롤
+          scrollToMap();
         } else {
           if (window.selectedStudyCategories) window.selectedStudyCategories.delete(value);
         }
         applyFilters();
     } else if (type === 'comfort') {
-      // 쾌적함 카테고리: 단일 선택만 허용
-      const comfortChips = document.querySelectorAll('[data-type="comfort"]');
-      comfortChips.forEach(chip => chip.classList.remove('active'));
-      selectedComfortCategories.clear();
-      if (btn) {
+      // 쾌적함 카테고리: 토글 방식으로 변경
+      if (btn.classList.contains('active')) {
+        // 이미 선택된 버튼을 다시 클릭한 경우 - 선택 해제
+        btn.classList.remove('active');
+        selectedComfortCategories.delete(value);
+        filterLibrariesByComfort('total');
+      } else {
+        // 새로운 버튼 선택 - 다른 버튼들은 모두 해제
+        const comfortChips = document.querySelectorAll('[data-type="comfort"]');
+        comfortChips.forEach(chip => chip.classList.remove('active'));
+        selectedComfortCategories.clear();
+        
         btn.classList.add('active');
         selectedComfortCategories.add(value);
         filterLibrariesByComfort(value);
-      } else {
-        filterLibrariesByComfort('total');
+        // 지도로 스크롤
+        scrollToMap();
       }
       applyFilters();
     }
@@ -1799,6 +1812,10 @@ function handleBookTypeSelection(btn, value) {
     document.querySelectorAll('[data-type="book"]').forEach(chip => chip.classList.remove('active'));
     // 지도에 모든 도서관 표시
     filterLibrariesByGenre('', 'total');
+    // 지도로 스크롤 (2단계 카테고리가 나타난 후)
+    setTimeout(() => {
+      scrollToMap();
+    }, 300);
   }
   
   applyFilters();
@@ -2141,4 +2158,14 @@ function renderWordCloud(l){
 }
 
 // 지도 관련 내부 구현 제거됨 (map.js 사용)
- 
+
+// 지도로 스크롤하는 함수
+function scrollToMap() {
+  const mapContainer = document.querySelector('.map-container');
+  if (mapContainer) {
+    mapContainer.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'start' 
+    });
+  }
+}
