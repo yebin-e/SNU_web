@@ -287,33 +287,14 @@ html, body { max-width: 100%; overflow-x: hidden; }
 /* 메뉴 버튼들 */
 .menu-buttons {
     display: flex;
-    flex-direction: row;
-    gap: 2.5rem;
+    flex-direction: column;
+    gap: 1.5rem;
     width: 100%;
-    max-width: 1400px;
+    max-width: 500px;
     margin: 0 auto;
-    justify-content: center;
-    align-items: stretch;
-    padding: 0 1rem;
-    box-sizing: border-box;
 }
 
-.menu-btn { 
-    background: rgba(255,255,255,0.08); 
-    border: 2px solid rgba(255,255,255,0.25); 
-    border-radius: 15px; 
-    padding: 2.5rem 2rem; 
-    cursor: pointer; 
-    transition: all 0.3s ease; 
-    text-align: center; 
-    color: #ffffff; 
-    backdrop-filter: blur(10px); 
-    animation: fadeInUp 0.6s ease both;
-    flex: 1;
-    min-width: 350px;
-    min-height: 250px;
-    width: 100%;
-}
+.menu-btn { background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.25); border-radius: 15px; padding: 1.5rem; cursor: pointer; transition: all 0.3s ease; text-align: center; color: #ffffff; backdrop-filter: blur(10px); animation: fadeInUp 0.6s ease both; }
 
 .menu-btn:nth-child(1) { animation-delay: 1.2s; }
 .menu-btn:nth-child(2) { animation-delay: 1.4s; }
@@ -321,23 +302,13 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .menu-btn:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.5); transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35); }
 
 .menu-icon {
-    font-size: 3.5rem;
-    margin-bottom: 1rem;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
 }
 
-.menu-text { 
-    font-size: 1.5rem; 
-    font-weight: 600; 
-    margin-bottom: 0.7rem; 
-    color: #ffffff; 
-}
+.menu-text { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.3rem; color: #ffffff; }
 
-.menu-desc { 
-    font-size: 1.1rem; 
-    opacity: 0.8; 
-    color: #e5e7eb; 
-    line-height: 1.5;
-}
+.menu-desc { font-size: 0.9rem; opacity: 0.8; color: #e5e7eb; }
 
 /* 메뉴 카드 호버 애니메이션 강화 */
 .menu-buttons { perspective: 800px; }
@@ -385,116 +356,6 @@ html, body { max-width: 100%; overflow-x: hidden; }
 @keyframes shimmer-sweep {
     from { transform: rotate(25deg) translateX(-140%); }
     to { transform: rotate(25deg) translateX(320%); }
-}
-
-/* 반응형 디자인 - 다양한 화면 크기 대응 */
-@media (max-width: 1200px) {
-    .menu-buttons {
-        max-width: 1000px;
-        gap: 2rem;
-    }
-    
-    .menu-btn {
-        min-width: 280px;
-        min-height: 220px;
-        padding: 2rem 1.5rem;
-    }
-    
-    .menu-icon {
-        font-size: 3rem;
-        margin-bottom: 0.8rem;
-    }
-    
-    .menu-text {
-        font-size: 1.3rem;
-        margin-bottom: 0.6rem;
-    }
-    
-    .menu-desc {
-        font-size: 1rem;
-    }
-}
-
-@media (max-width: 900px) {
-    .menu-buttons {
-        max-width: 800px;
-        gap: 1.5rem;
-    }
-    
-    .menu-btn {
-        min-width: 240px;
-        min-height: 200px;
-        padding: 1.8rem 1.3rem;
-    }
-    
-    .menu-icon {
-        font-size: 2.8rem;
-        margin-bottom: 0.7rem;
-    }
-    
-    .menu-text {
-        font-size: 1.2rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .menu-desc {
-        font-size: 0.95rem;
-    }
-}
-
-@media (max-width: 768px) {
-    .menu-buttons {
-        flex-direction: column;
-        max-width: 500px;
-        gap: 1.5rem;
-    }
-    
-    .menu-btn {
-        flex: none;
-        padding: 1.5rem;
-        min-height: auto;
-        min-width: auto;
-        width: 100%;
-    }
-    
-    .menu-icon {
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .menu-text {
-        font-size: 1.1rem;
-    }
-    
-    .menu-desc {
-        font-size: 0.9rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .menu-buttons {
-        max-width: 100%;
-        padding: 0 1rem;
-        gap: 1rem;
-    }
-    
-    .menu-btn {
-        padding: 1.2rem;
-    }
-    
-    .menu-icon {
-        font-size: 2.2rem;
-        margin-bottom: 0.4rem;
-    }
-    
-    .menu-text {
-        font-size: 1rem;
-        margin-bottom: 0.4rem;
-    }
-    
-    .menu-desc {
-        font-size: 0.85rem;
-    }
 }
 
 /* Navy 테마 가독성: 갈색 텍스트/아이콘을 어두운 배경 위에서는 흰색으로 */
@@ -574,20 +435,12 @@ html, body { max-width: 100%; overflow-x: hidden; }
 /* 새로운 랭킹 시스템 스타일 */
 .advanced-rankings {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-    margin-bottom: 1rem;
-    max-width: 100%;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    margin-top: 2rem;
 }
 
-.ranking-category { 
-    background: #ffffff; 
-    border-radius: 15px; 
-    padding: 1.5rem; 
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); 
-    width: 100%;
-    max-width: 100%;
-}
+.ranking-category { background: #ffffff; border-radius: 15px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
 
 .ranking-category h3 { color: #111827; font-size: 1.2rem; margin-bottom: 1rem; text-align: center; border-bottom: 2px solid #3b82f6; padding-bottom: 0.5rem; }
 
@@ -599,7 +452,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
     justify-content: center;
 }
 
-.ranking-tab { padding: 0.4rem 0.8rem; border: 1px solid #3b82f6; background: #ffffff; color: #2563eb; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; font-size: 0.75rem; min-width: 60px; text-align: center; }
+.ranking-tab { padding: 0.5rem 1rem; border: 1px solid #3b82f6; background: #ffffff; color: #2563eb; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; font-size: 0.8rem; }
 
 .ranking-tab:hover { background: #3b82f6; color: #ffffff; transform: translateY(-1px); }
 
@@ -1917,169 +1770,3 @@ html, body { max-width: 100%; overflow-x: hidden; }
     pointer-events: none;
     position: absolute;
   }
-
-/* 도서관 상세 정보 뷰 스타일 */
-.library-detail-view {
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 10px 28px rgba(0,0,0,0.12);
-  overflow: hidden;
-  height: 100%;
-}
-
-.library-detail-header {
-  background: linear-gradient(135deg, #3b82f6, #60a5fa);
-  color: #ffffff;
-  padding: 1.5rem;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.library-detail-header h3 {
-  margin: 0;
-  font-size: 1.3rem;
-  font-weight: 600;
-  flex: 1;
-}
-
-.library-detail-close {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: #ffffff;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-}
-
-.library-detail-close:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.1);
-}
-
-.library-detail-content {
-  padding: 1.5rem;
-  max-height: calc(100vh - 300px);
-  overflow-y: auto;
-}
-
-.detail-section {
-  margin-bottom: 1.5rem;
-  padding: 1.2rem;
-  background: #f8fafc;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-}
-
-.detail-section:last-child {
-  margin-bottom: 0;
-}
-
-.detail-section h4 {
-  margin: 0 0 1rem 0;
-  color: #1e293b;
-  font-size: 1.1rem;
-  font-weight: 600;
-  border-bottom: 2px solid #3b82f6;
-  padding-bottom: 0.5rem;
-}
-
-.detail-section p {
-  margin: 0.5rem 0;
-  color: #475569;
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-
-.detail-section strong {
-  color: #1e293b;
-  font-weight: 600;
-}
-
-.detail-section a {
-  color: #3b82f6;
-  text-decoration: none;
-  word-break: break-all;
-}
-
-.detail-section a:hover {
-  text-decoration: underline;
-}
-
-/* 스크롤바 스타일 */
-.library-detail-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.library-detail-content::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 3px;
-}
-
-.library-detail-content::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-
-.library-detail-content::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* 장르별 한눈에 보기 반응형 디자인 */
-@media (max-width: 768px) {
-  .advanced-rankings {
-    gap: 1rem;
-    margin-top: 1.5rem;
-  }
-  
-  .ranking-category {
-    padding: 1rem;
-  }
-  
-  .ranking-category h3 {
-    font-size: 1.1rem;
-  }
-  
-  .ranking-tabs {
-    gap: 0.3rem;
-  }
-  
-  .ranking-tab {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.7rem;
-    min-width: 50px;
-  }
-}
-
-@media (max-width: 480px) {
-  .advanced-rankings {
-    gap: 0.8rem;
-    margin-top: 1rem;
-  }
-  
-  .ranking-category {
-    padding: 0.8rem;
-  }
-  
-  .ranking-category h3 {
-    font-size: 1rem;
-  }
-  
-  .ranking-tabs {
-    gap: 0.25rem;
-  }
-  
-  .ranking-tab {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.65rem;
-    min-width: 45px;
-  }
-}

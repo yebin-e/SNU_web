@@ -80,13 +80,13 @@
             <!-- 메뉴 버튼들 -->
             <div class="menu-buttons">
                 <button class="menu-btn" id="mainPageBtn">
-                    <div class="menu-icon">🏛️</div>
+                    <div class="menu-icon">🏢</div>
                     <div class="menu-text">메인화면 접속</div>
                     <div class="menu-desc">도서관 검색 및 정보 조회</div>
                 </button>
                 
                 <button class="menu-btn" id="childrenPageBtn">
-                    <div class="menu-icon">👶</div>
+                    <div class="menu-icon">👶🏻</div>
                     <div class="menu-text">어린이 이용정보 한눈에 보기</div>
                     <div class="menu-desc">어린이 친화적인 도서관 정보</div>
                 </button>
@@ -104,7 +104,7 @@
     <div id="genrePage" class="genre-page" style="display: none;">
         <div class="genre-content">
             <header class="genre-header">
-                <button class="back-btn" id="backToMiddleFromGenre">← 돌아가기</button>
+                <button class="back-btn" id="backToMiddleFromGenre">⇠ 돌아가기</button>
                 <h1>📚 장르별 한눈에 보기</h1>
             </header>
             
@@ -118,31 +118,43 @@
                 <!-- 새로운 랭킹 시스템 -->
                 <div class="advanced-rankings">
                     <div class="ranking-category">
-                        <h3>🇰🇷 국내서 장르별 랭킹</h3>
+                        <h3>🇰🇷 국내서 장르별 랭킹 Top 10</h3>
                         <div class="ranking-tabs">
                             <button class="ranking-tab active" data-type="domestic" data-genre="total">전체</button>
                             <button class="ranking-tab" data-type="domestic" data-genre="총류">총류</button>
                             <button class="ranking-tab" data-type="domestic" data-genre="철학">철학</button>
+                            <button class="ranking-tab" data-type="domestic" data-genre="종교">종교</button>
                             <button class="ranking-tab" data-type="domestic" data-genre="사회과학">사회과학</button>
+                            <button class="ranking-tab" data-type="domestic" data-genre="순수과학">순수과학</button>
+                            <button class="ranking-tab" data-type="domestic" data-genre="기술과학">기술과학</button>
+                            <button class="ranking-tab" data-type="domestic" data-genre="예술">예술</button>
+                            <button class="ranking-tab" data-type="domestic" data-genre="언어">언어</button>
                             <button class="ranking-tab" data-type="domestic" data-genre="문학">문학</button>
+                            <button class="ranking-tab" data-type="domestic" data-genre="역사">역사</button>
                         </div>
                         <div class="ranking-list" id="domesticRankingList"></div>
                     </div>
                     
                     <div class="ranking-category">
-                        <h3>🌍 국외서 장르별 랭킹</h3>
+                        <h3>🌍 국외서 장르별 랭킹 Top 10</h3>
                         <div class="ranking-tabs">
                             <button class="ranking-tab active" data-type="foreign" data-genre="total">전체</button>
                             <button class="ranking-tab" data-type="foreign" data-genre="총류">총류</button>
                             <button class="ranking-tab" data-type="foreign" data-genre="철학">철학</button>
+                            <button class="ranking-tab" data-type="foreign" data-genre="종교">종교</button>
                             <button class="ranking-tab" data-type="foreign" data-genre="사회과학">사회과학</button>
+                            <button class="ranking-tab" data-type="foreign" data-genre="순수과학">순수과학</button>
+                            <button class="ranking-tab" data-type="foreign" data-genre="기술과학">기술과학</button>
+                            <button class="ranking-tab" data-type="foreign" data-genre="예술">예술</button>
+                            <button class="ranking-tab" data-type="foreign" data-genre="언어">언어</button>
                             <button class="ranking-tab" data-type="foreign" data-genre="문학">문학</button>
+                            <button class="ranking-tab" data-type="foreign" data-genre="역사">역사</button>
                         </div>
                         <div class="ranking-list" id="foreignRankingList"></div>
                     </div>
                     
                     <div class="ranking-category">
-                        <h3>👶 인쇄자료 연령대별 랭킹</h3>
+                        <h3>📖 인쇄자료 연령대별 랭킹 Top 10</h3>
                         <div class="ranking-tabs">
                             <button class="ranking-tab active" data-type="print" data-age="어린이">어린이</button>
                             <button class="ranking-tab" data-type="print" data-age="청소년">청소년</button>
@@ -152,7 +164,7 @@
                     </div>
                     
                     <div class="ranking-category">
-                        <h3>💻 전자자료 연령대별 랭킹</h3>
+                        <h3>💻 전자자료 연령대별 랭킹 Top 10</h3>
                         <div class="ranking-tabs">
                             <button class="ranking-tab active" data-type="electronic" data-age="어린이">어린이</button>
                             <button class="ranking-tab" data-type="electronic" data-age="청소년">청소년</button>
@@ -169,8 +181,8 @@
     <div id="childrenPage" class="children-page" style="display: none;">
         <div class="children-content">
             <header class="children-header">
-                <button class="back-btn" id="backToMiddle">← 돌아가기</button>
-                <h1>👶 어린이 이용정보 한눈에 보기</h1>
+                <button class="back-btn" id="backToMiddle">⇠ 돌아가기</button>
+                <h1>👶🏻 어린이 이용정보 한눈에 보기</h1>
             </header>
             
             <div class="children-main">

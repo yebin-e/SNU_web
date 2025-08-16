@@ -2314,6 +2314,163 @@ function renderWordCloud(l){
 
 // 지도 관련 내부 구현 제거됨 (map.js 사용)
 
+// 지도에서 도서관 클릭 시 호출되는 함수 (map.js에서 호출)
+function selectLibrary(library) {
+  if (library) {
+    showLibraryDetail(library);
+  }
+}
+
+// 도서관 상세 정보 표시
+function showLibraryDetail(library) {
+  // 도서관 리스트를 상세 정보로 교체
+  const libraryList = document.getElementById('libraryList');
+  if (libraryList) {
+    libraryList.innerHTML = createLibraryDetailHTML(library);
+  }
+  
+  // 상세 정보 닫기 버튼 이벤트 추가
+  const closeBtn = document.querySelector('.library-detail-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeLibraryDetail);
+  }
+}
+
+// 도서관 상세 정보 HTML 생성
+function createLibraryDetailHTML(library) {
+  return `
+    <div class="library-detail-view">
+      <div class="library-detail-header">
+        <button class="library-detail-close">✕</button>
+        <h3>${library.name}</h3>
+      </div>
+      <div class="library-detail-content">
+        <div class="detail-section">
+          <h4>📍 위치 정보</h4>
+          <p><strong>주소:</strong> ${library.address || '정보 없음'}</p>
+          <p><strong>구:</strong> ${library.district || '정보 없음'}</p>
+          <p><strong>전화번호:</strong> ${library.phone || '정보 없음'}</p>
+          ${library.homepage ? `<p><strong>홈페이지:</strong> <a href="${library.homepage}" target="_blank">${library.homepage}</a></p>` : ''}
+        </div>
+        
+        <div class="detail-section">
+          <h4>🕒 이용 정보</h4>
+          <p><strong>개관시간:</strong> ${library.openHours || '정보 없음'}</p>
+          <p><strong>휴관일:</strong> ${library.closedDays || '정보 없음'}</p>
+          <p><strong>개관년도:</strong> ${library.yearOpened || '정보 없음'}</p>
+        </div>
+        
+        <div class="detail-section">
+          <h4>📚 도서 정보</h4>
+          <p><strong>국내서:</strong> ${(library.holdingsDomestic || 0).toLocaleString()}권</p>
+          <p><strong>국외서:</strong> ${(library.holdingsForeign || 0).toLocaleString()}권</p>
+          <p><strong>총 도서:</strong> ${((library.holdingsDomestic || 0) + (library.holdingsForeign || 0)).toLocaleString()}권</p>
+        </div>
+        
+        <div class="detail-section">
+          <h4>💺 시설 정보</h4>
+          <p><strong>총 좌석:</strong> ${(library.seatsTotal || 0).toLocaleString()}석</p>
+          <p><strong>어린이 좌석:</strong> ${(library.seatsChild || 0).toLocaleString()}석</p>
+          <p><strong>면적:</strong> ${(library.area || 0).toLocaleString()}㎡</p>
+          <p><strong>PC:</strong> ${(library.pcs || 0).toLocaleString()}대</p>
+        </div>
+        
+        <div class="detail-section">
+          <h4>📊 이용 현황</h4>
+          <p><strong>방문자:</strong> ${(library.visitors || 0).toLocaleString()}명</p>
+          <p><strong>쾌적함:</strong> ${library.comfortLevel || '정보 없음'}</p>
+          <p><strong>좌석혼잡도:</strong> ${library.crowdingLevel || '정보 없음'}</p>
+        </div>
+        
+        ${library.hasChildrenRoom ? `
+        <div class="detail-section">
+          <h4>👶 어린이 서비스</h4>
+          <p><strong>어린이실:</strong> 보유</p>
+          <p><strong>어린이 자료:</strong> ${(library['어린이 자료(인쇄)수'] || 0).toLocaleString()}권</p>
+        </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// 도서관 상세 정보 닫기
+function closeLibraryDetail() {
+  // 도서관 리스트로 복원
+  const libraryList = document.getElementById('libraryList');
+  if (libraryList) {
+    libraryList.innerHTML = createLibraryListHTML();
+  }
+  
+  // 필터 적용하여 원래 상태로 복구
+  applyFilters();
+  
+  // 이벤트 리스너 다시 설정
+  initializeEventListeners();
+}
+
+// 도서관 리스트 HTML 생성 (기존 리스트 복원용)
+function createLibraryListHTML() {
+  return `
+    <div class="sidebar-card">
+      <div class="sidebar-header">
+        <h3>도서관 목록</h3>
+        <div class="filter-controls">
+          <select id="districtFilter">
+            <option value="">전체 구</option>
+            <option value="강남구">강남구</option>
+            <option value="강동구">강동구</option>
+            <option value="강북구">강북구</option>
+            <option value="강서구">강서구</option>
+            <option value="관악구">관악구</option>
+            <option value="광진구">광진구</option>
+            <option value="구로구">구로구</option>
+            <option value="금천구">금천구</option>
+            <option value="노원구">노원구</option>
+            <option value="도봉구">도봉구</option>
+            <option value="동대문구">동대문구</option>
+            <option value="동작구">동작구</option>
+            <option value="마포구">마포구</option>
+            <option value="서대문구">서대문구</option>
+            <option value="서초구">서초구</option>
+            <option value="성동구">성동구</option>
+            <option value="성북구">성북구</option>
+            <option value="송파구">송파구</option>
+            <option value="양천구">양천구</option>
+            <option value="영등포구">영등포구</option>
+            <option value="용산구">용산구</option>
+            <option value="은평구">은평구</option>
+            <option value="종로구">종로구</option>
+            <option value="중구">중구</option>
+            <option value="중랑구">중랑구</option>
+          </select>
+          <select id="sortSelect" class="sort-select">
+            <option value="">정렬 없음</option>
+            <option value="holdingsDesc">보유도서 많은 순</option>
+            <option value="visitorsDesc">방문자 많은 순</option>
+            <option value="loansDesc">대출 많은 순</option>
+            <option value="seatsDesc">좌석 많은 순</option>
+            <option value="areaDesc">면적 큰 순</option>
+            <option value="yearDesc">개관년도 최신 순</option>
+            <option value="yearAsc">개관년도 오래된 순</option>
+          </select>
+        </div>
+        <div class="age-filter-section">
+          <select id="ageFocus" class="age-select">
+            <option value="">연령대 집중 없음</option>
+            <option value="child">어린이 이용 많음</option>
+            <option value="teen">청소년 이용 많음</option>
+            <option value="adult">성인 이용 많음</option>
+          </select>
+        </div>
+      </div>
+      <div class="library-list" id="libraryList">
+        <div class="library-list-inner" id="libraryListInner"></div>
+      </div>
+    </div>
+  `;
+}
+
 // 지도로 스크롤하는 함수
 function scrollToMap() {
   const mapContainer = document.querySelector('.map-container');
@@ -4531,8 +4688,8 @@ function showLibraryDetail(library) {
       <div class="detail-section">
         <h4>🏷️ 카테고리</h4>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-          ${library.bookCategories.map((c) => `<span style=\"background:#ede3d6;color:#5a3d26;padding:.35rem .6rem;border-radius:999px;font-size:.85rem;border:1px solid #d7c3a8;\">${c}</span>`).join('')}
-          ${library.spaceCategories.map((c) => `<span style=\"background:#ecfdf5;color:#065f46;padding:.35rem .6rem;border-radius:999px;font-size:.85rem;border:1px solid #d1fae5;\">${c}</span>`).join('')}
+          ${library.bookCategories.map((c) => `<span style=\"background:#ede3d6;color:#5a3d26;padding:.35rem .6rem;border-radius:999px;font-size:.85rem;border:1px solidhsla(217, 91.20%, 59.80%, 0.71);\">${c}</span>`).join('')}
+          ${library.spaceCategories.map((c) => `<span style=\"background:#ecfdf5;color:#065f46;padding:.35rem .6rem;border-radius:999px;font-size:.85rem;border:1px solid #3b82f6;\">${c}</span>`).join('')}
         </div>
       </div>
       <div class="detail-section">
@@ -4613,3 +4770,150 @@ function renderWordCloud(l){
     })
     .start();
   }
+
+// 사이드바에 도서관 상세 정보 표시하는 함수
+function showLibraryDetailInSidebar(library) {
+  // 도서관 리스트를 상세 정보로 교체
+  const libraryList = document.getElementById('libraryList');
+  if (libraryList) {
+    libraryList.innerHTML = createLibraryDetailHTML(library);
+  }
+  
+  // 상세 정보 닫기 버튼 이벤트 추가
+  const closeBtn = document.querySelector('.library-detail-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeLibraryDetail);
+  }
+}
+
+// 도서관 상세 정보 HTML 생성
+function createLibraryDetailHTML(library) {
+  return `
+    <div class="library-detail-view">
+      <div class="library-detail-header">
+        <button class="library-detail-close">✕</button>
+        <h3>${library.name}</h3>
+      </div>
+      <div class="library-detail-content">
+        <div class="detail-section">
+          <h4>📍 위치 정보</h4>
+          <p><strong>주소:</strong> ${library.address || '정보 없음'}</p>
+          <p><strong>구:</strong> ${library.district || '정보 없음'}</p>
+          <p><strong>전화번호:</strong> ${library.phone || '정보 없음'}</p>
+          ${library.homepage ? `<p><strong>홈페이지:</strong> <a href="${library.homepage}" target="_blank">${library.homepage}</a></p>` : ''}
+        </div>
+        
+        <div class="detail-section">
+          <h4>🕒 이용 정보</h4>
+          <p><strong>개관시간:</strong> ${library.openHours || '정보 없음'}</p>
+          <p><strong>휴관일:</strong> ${library.closedDays || '정보 없음'}</p>
+          <p><strong>개관년도:</strong> ${library.yearOpened || '정보 없음'}</p>
+        </div>
+        
+        <div class="detail-section">
+          <h4>📚 도서 정보</h4>
+          <p><strong>국내서:</strong> ${(library.holdingsDomestic || 0).toLocaleString()}권</p>
+          <p><strong>국외서:</strong> ${(library.holdingsForeign || 0).toLocaleString()}권</p>
+          <p><strong>총 도서:</strong> ${((library.holdingsDomestic || 0) + (library.holdingsForeign || 0)).toLocaleString()}권</p>
+        </div>
+        
+        <div class="detail-section">
+          <h4>💺 시설 정보</h4>
+          <p><strong>총 좌석:</strong> ${(library.seatsTotal || 0).toLocaleString()}석</p>
+          <p><strong>어린이 좌석:</strong> ${(library.seatsChild || 0).toLocaleString()}석</p>
+          <p><strong>면적:</strong> ${(library.area || 0).toLocaleString()}㎡</p>
+          <p><strong>PC:</strong> ${(library.pcs || 0).toLocaleString()}대</p>
+        </div>
+        
+        <div class="detail-section">
+          <h4>📊 이용 현황</h4>
+          <p><strong>방문자:</strong> ${(library.visitors || 0).toLocaleString()}명</p>
+          <p><strong>쾌적함:</strong> ${library.comfortLevel || '정보 없음'}</p>
+          <p><strong>좌석혼잡도:</strong> ${library.crowdingLevel || '정보 없음'}</p>
+        </div>
+        
+        ${library.hasChildrenRoom ? `
+        <div class="detail-section">
+          <h4>👶 어린이 서비스</h4>
+          <p><strong>어린이실:</strong> 보유</p>
+          <p><strong>어린이 자료:</strong> ${(library['어린이 자료(인쇄)수'] || 0).toLocaleString()}권</p>
+        </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// 도서관 상세 정보 닫기
+function closeLibraryDetail() {
+  // 도서관 리스트로 복원
+  const libraryList = document.getElementById('libraryList');
+  if (libraryList) {
+    libraryList.innerHTML = createLibraryListHTML();
+  }
+  
+  // 필터 적용하여 원래 상태로 복구
+  applyFilters();
+}
+
+// 도서관 리스트 HTML 생성 (기존 리스트 복원용)
+function createLibraryListHTML() {
+  return `
+    <div class="sidebar-card">
+      <div class="sidebar-header">
+        <h3>도서관 목록</h3>
+        <div class="filter-controls">
+          <select id="districtFilter">
+            <option value="">전체 구</option>
+            <option value="강남구">강남구</option>
+            <option value="강동구">강동구</option>
+            <option value="강북구">강북구</option>
+            <option value="강서구">강서구</option>
+            <option value="관악구">관악구</option>
+            <option value="광진구">광진구</option>
+            <option value="구로구">구로구</option>
+            <option value="금천구">금천구</option>
+            <option value="노원구">노원구</option>
+            <option value="도봉구">도봉구</option>
+            <option value="동대문구">동대문구</option>
+            <option value="동작구">동작구</option>
+            <option value="마포구">마포구</option>
+            <option value="서대문구">서대문구</option>
+            <option value="서초구">서초구</option>
+            <option value="성동구">성동구</option>
+            <option value="성북구">성북구</option>
+            <option value="송파구">송파구</option>
+            <option value="양천구">양천구</option>
+            <option value="영등포구">영등포구</option>
+            <option value="용산구">용산구</option>
+            <option value="은평구">은평구</option>
+            <option value="종로구">종로구</option>
+            <option value="중구">중구</option>
+            <option value="중랑구">중랑구</option>
+          </select>
+          <select id="sortSelect" class="sort-select">
+            <option value="">정렬 없음</option>
+            <option value="holdingsDesc">보유도서 많은 순</option>
+            <option value="visitorsDesc">방문자 많은 순</option>
+            <option value="loansDesc">대출 많은 순</option>
+            <option value="seatsDesc">좌석 많은 순</option>
+            <option value="areaDesc">면적 큰 순</option>
+            <option value="yearDesc">개관년도 최신 순</option>
+            <option value="yearAsc">개관년도 오래된 순</option>
+          </select>
+        </div>
+        <div class="age-filter-section">
+          <select id="ageFocus" class="age-select">
+            <option value="">연령대 집중 없음</option>
+            <option value="child">어린이 이용 많음</option>
+            <option value="teen">청소년 이용 많음</option>
+            <option value="adult">성인 이용 많음</option>
+          </select>
+        </div>
+      </div>
+      <div class="library-list" id="libraryList">
+        <div class="library-list-inner" id="libraryListInner"></div>
+      </div>
+    </div>
+  `;
+}
