@@ -17,6 +17,9 @@
     detailMode: false,
     hasAnimated: false,
     customOverlay: null,
+    roadview: null,
+    roadviewClient: null,
+    roadviewOverlay: null,
     isPolygonClick: false,
     comfortFxNode: null,
     relaxFxNode: null
@@ -28,6 +31,114 @@
     if (!global.kakao || !global.kakao.maps) return;
     if (state.ready) return cb();
     global.kakao.maps.load(()=>{ state.ready = true; cb(); });
+  }
+
+  function ensureRoadviewInfra(){
+    try {
+      const container = document.querySelector('.map-container') || document.getElementById(state.containerId);
+      if (!container) return;
+      // 컨테이너 position 보정
+      try {
+        const comp = getComputedStyle(container);
+        if (!comp.position || comp.position === 'static') container.style.position = 'relative';
+      } catch(_){ container.style.position = 'relative'; }
+
+      // 오버레이 생성
+      if (!state.roadviewOverlay) {
+        const overlay = document.createElement('div');
+        overlay.id = 'roadviewOverlay';
+        overlay.style.position = 'absolute';
+        overlay.style.left = '0';
+        overlay.style.top = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.zIndex = '999999';
+        overlay.style.background = 'rgba(0,0,0,0.45)';
+        overlay.style.display = 'none';
+
+        const inner = document.createElement('div');
+        inner.className = 'roadview-inner';
+        inner.style.position = 'absolute';
+        inner.style.left = '50%';
+        inner.style.top = '50%';
+        inner.style.transform = 'translate(-50%, -50%)';
+        inner.style.width = '78%';
+        inner.style.height = '70%';
+        inner.style.background = '#000';
+        inner.style.borderRadius = '12px';
+        inner.style.boxShadow = '0 10px 30px rgba(0,0,0,0.4)';
+        inner.style.overflow = 'hidden';
+
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.textContent = '×';
+        closeBtn.setAttribute('aria-label', '로드뷰 닫기');
+        closeBtn.style.position = 'absolute';
+        closeBtn.style.right = '8px';
+        closeBtn.style.top = '6px';
+        closeBtn.style.zIndex = '2';
+        closeBtn.style.width = '34px';
+        closeBtn.style.height = '34px';
+        closeBtn.style.border = 'none';
+        closeBtn.style.borderRadius = '8px';
+        closeBtn.style.background = 'rgba(255,255,255,0.9)';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.style.fontSize = '22px';
+        closeBtn.style.lineHeight = '1';
+        closeBtn.addEventListener('click', hideRoadviewOverlay, { once: false });
+
+        const rv = document.createElement('div');
+        rv.id = 'roadview';
+        rv.style.width = '100%';
+        rv.style.height = '100%';
+
+        inner.appendChild(rv);
+        inner.appendChild(closeBtn);
+        overlay.appendChild(inner);
+        overlay.addEventListener('click', (e)=>{ if (e.target === overlay) hideRoadviewOverlay(); });
+        container.appendChild(overlay);
+        state.roadviewOverlay = overlay;
+      }
+
+      // 로드뷰 객체 준비
+      if (!state.roadview || !state.roadviewClient) {
+        const roadviewContainer = document.getElementById('roadview');
+        if (!roadviewContainer) return;
+        state.roadview = new kakao.maps.Roadview(roadviewContainer);
+        state.roadviewClient = new kakao.maps.RoadviewClient();
+      }
+    } catch(_){ }
+  }
+
+  function hideRoadviewOverlay(){ try { if (state.roadviewOverlay) state.roadviewOverlay.style.display = 'none'; } catch(_){ } }
+
+  function showRoadviewAt(position){
+    try {
+      ensureRoadviewInfra();
+      if (!state.roadviewClient || !state.roadview) return;
+      // position: kakao.maps.LatLng
+      state.roadviewClient.getNearestPanoId(position, 50, function(panoId){
+        try {
+          if (panoId) {
+            state.roadview.setPanoId(panoId, position);
+            if (state.roadviewOverlay) state.roadviewOverlay.style.display = 'block';
+          } else {
+            hideRoadviewOverlay();
+            showToast('해당 위치에서 로드뷰를 찾을 수 없습니다.');
+          }
+        } catch(_){ }
+      });
+    } catch(_){ }
+  }
+
+  function showRoadviewForLibrary(library){
+    try {
+      const lat = Number(library.lat ?? library.latitude);
+      const lng = Number(library.lng ?? library.longitude);
+      if (!isFinite(lat) || !isFinite(lng)) { showToast('도서관 좌표가 올바르지 않습니다.'); return; }
+      const position = new kakao.maps.LatLng(lat, lng);
+      showRoadviewAt(position);
+    } catch(_){ }
   }
 
   function applyZoomFactor(baseSize){
@@ -178,7 +289,9 @@
     ensureKakaoLoaded(()=>{
       if (state.map) return;
       const center = new kakao.maps.LatLng(37.5665, 126.9780);
-      state.map = new kakao.maps.Map(document.getElementById(state.containerId), {
+      const mapEl = document.getElementById(state.containerId);
+      try { if (getComputedStyle(mapEl).position === 'static') mapEl.style.position = 'relative'; } catch(_) { mapEl.style.position = 'relative'; }
+      state.map = new kakao.maps.Map(mapEl, {
         center,
         level: state.options.level || 8,
         draggable: true,
@@ -200,6 +313,7 @@
           }
         } catch(_){ }
       });
+      // 안전모드: 초기엔 클러스터러 없이 직접 표시 → 이후 updateClusteringMode가 상황에 따라 전환
       try{
         if (typeof kakao.maps.MarkerClusterer !== 'undefined'){
           state.clusterer = new kakao.maps.MarkerClusterer({
@@ -219,6 +333,9 @@
       state.hoverOverlay.remove();
       state.hoverOverlay = null;
     }
+    // 로드뷰/카드 정리
+    try { if (state.roadviewCardNode) { state.roadviewCardNode.remove(); state.roadviewCardNode = null; } } catch(_){}
+    try { if (state.roadviewContainer) { state.roadviewContainer.style.display = 'none'; } } catch(_){}
     // 랭킹 뱃지 오버레이 제거
     if (state.rankOverlays && state.rankOverlays.length) {
       state.rankOverlays.forEach(o => { try { o.setMap(null); } catch(_){} });
@@ -304,9 +421,12 @@
       console.log('최종 렌더링할 도서관 수:', rows.length); // 디버깅
       
       if (rows.length === 0){
-        state.map.setCenter(new kakao.maps.LatLng(37.5665, 126.9780));
-        state.map.setLevel(8);
-        return;
+        // 데이터가 없어도 기본 중심/레벨로 지도 표시는 유지
+        try {
+          state.map.setCenter(new kakao.maps.LatLng(37.5665, 126.9780));
+          state.map.setLevel(8);
+        } catch(_){ }
+        // returnせず 진행해 지도가 기본 상태로 보이도록 함
       }
   
       const maxVisitors = Math.max(1, rows.reduce((m, l) => Math.max(m, Number(l.visitors) || 0), 1));
@@ -353,6 +473,7 @@
         });
   
         const marker = new kakao.maps.Marker({ position: pos, image, zIndex: 2 });
+        // marker.setMap은 클러스터 모드에서 clusterer가 담당
         // 순위 뱃지(Top3) 계산: 나이 Top10 / 도서장르 Top10 / 전자자료 Top10 맥락에서 표시
         let rankForBadge = null;
         try {
@@ -374,32 +495,31 @@
             const ov = new kakao.maps.CustomOverlay({
               position: pos,
               content: badge,
+              // 이모지 바로 아래 쪽에 붙도록 앵커/오프셋 조정
               xAnchor: 0.5,
-              yAnchor: 1.0,
+              yAnchor: -0.05,
               zIndex: 3
             });
             ov.setMap(state.map);
             state.rankOverlays.push(ov);
           } catch(_){ }
         }
-        // 연령/쾌적함/좌석혼잡도 필터 중 하나라도 활성화되어 있으면 호버 카드 표시
-        const shouldHover = !!window.ageFocus || !!window.comfortFilter || (window.selectedStudyCategories && window.selectedStudyCategories.size > 0) || !!window.activeBookGenre || !!window.activeElectronicCategory;
-        if (shouldHover) {
-          let hoverTimeout;
-          kakao.maps.event.addListener(marker, 'mouseover', () => {
-            clearTimeout(hoverTimeout);
-            hoverTimeout = setTimeout(() => {
-              if (!state.hoverOverlay) {
-                showHoverCard(d, pos);
-              }
-            }, 100);
-          });
-          kakao.maps.event.addListener(marker, 'mouseout', () => {
-            clearTimeout(hoverTimeout);
-            hideHoverCard();
-          });
-        }
-        kakao.maps.event.addListener(marker, 'click', () => emit('markerClick', d));
+        // 마커 호버 시 정보 카드 표시/숨김 (필터 상태에 따라 카드 종류 전환)
+        kakao.maps.event.addListener(marker, 'mouseover', () => {
+          showHoverForCurrentMode(d, pos);
+        });
+        kakao.maps.event.addListener(marker, 'mouseout', () => {
+          // 필터 모드인 경우: 호버 카드 제거
+          try { hideHoverCard(); } catch(_){ }
+          // 기본 모드인 경우: 로드뷰 카드 제거
+          try { if (state.roadviewCardNode) { state.roadviewCardNode.classList.remove('show'); setTimeout(()=>{ try{ state.roadviewCardNode.remove(); }catch(_){} state.roadviewCardNode=null; }, 200); } } catch(_){ }
+        });
+        // 클릭 시 로드뷰 진입
+        kakao.maps.event.addListener(marker, 'click', () => {
+          try { hideRoadviewInfoCard(); } catch(_){ }
+          try { showRoadviewForLibrary(d); } catch(_){ }
+          try { emit('markerClick', d); } catch(_){ }
+        });
         state.markers.push({ marker, baseSize, lib: d });
   
                 // ✅ 캐릭터는 도서관 수만큼 생성되며 정확한 위치로 이동
@@ -505,8 +625,10 @@
         (sw.getLat() + ne.getLat()) / 2,
         (sw.getLng() + ne.getLng()) / 2
       );
-      state.map.setCenter(center);
-      state.map.setLevel(8);
+      try {
+        state.map.setCenter(center);
+        state.map.setLevel(8);
+      } catch(_){ }
   
       // 폴리곤이 이미 로드되어 있으면 다시 로드하지 않음
       if (state.polygons.length === 0) {
@@ -585,14 +707,7 @@
       }
       return `<div class=\"mini-card\" style=\"background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:6px 10px;\">\n                <div style=\"font-size:12px;color:#9a3412;\">${type==='domestic'?'국내서':'국외서'} · ${window.activeBookGenre}</div>\n                <div style=\"font-weight:700;color:#7c2d12;\">${count.toLocaleString()}권</div>\n              </div>`;
     })() : '';
-    const electronicInfo = (window.activeElectronicCategory && d) ? (()=>{
-      const key = window.activeElectronicCategory;
-      // 우선적으로 리스트 계산 시 전달된 __electronicCount 사용 (정확한 Top10 수치 유지)
-      const projected = Number(d.__electronicCount || 0);
-      const fallback = Number((d.electronicData && d.electronicData[key]) || d[key] || 0);
-      const count = projected || fallback;
-      return `<div class=\"mini-card\" style=\"background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:6px 10px;\">\n                <div style=\"font-size:12px;color:#3730a3;\">전자자료 · ${key}</div>\n                <div style=\"font-weight:700;color:#1e3a8a;\">${count.toLocaleString()}건</div>\n              </div>`;
-    })() : '';
+    const electronicInfo = '';
 
     // 주소 처리: )까지만 표시하고 잘라내기
     let displayAddress = d.address || '-';
@@ -628,18 +743,17 @@
           <div class="pie-chart-container">${pieChartSVG}</div>
         </div>` : ''}
         <div class="rank-section" style="display:flex; gap:12px; flex-wrap:wrap; margin-top:6px;">
-          ${window.comfortFilter && typeof d.comfortRatio==='number' ? `
+          ${window.comfortFilter ? `
           <div class="mini-card" style="background:#ecfdf5;border:1px solid #d1fae5;border-radius:8px;padding:6px 10px;">
-            <div style="font-size:12px;color:#065f46;">쾌적함 순위</div>
-            <div style="font-weight:700;color:#065f46;">${comfortRank || '-'}</div>
+            <div style="font-size:12px;color:#065f46;">쾌적함</div>
+            <div style="font-weight:700;color:#065f46;">${d.comfortLevel || '-'}</div>
           </div>`:''}
           ${(window.selectedStudyCategories && window.selectedStudyCategories.size>0) ? `
           <div class="mini-card" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:6px 10px;">
-            <div style="font-size:12px;color:#075985;">좌석혼잡도 순위</div>
-            <div style="font-weight:700;color:#075985;">${crowdingRank || '-'}</div>
+            <div style="font-size:12px;color:#075985;">좌석혼잡도</div>
+            <div style="font-weight:700;color:#075985;">${d.crowdingLevel || '-'}</div>
           </div>`: ''}
           ${bookInfo}
-          ${electronicInfo}
         </div>
       </div>
     `;
@@ -786,6 +900,96 @@
     if (state.ready && state.polygons.length === 0) {
       initPolygons();
     }
+  }
+
+  // 로드뷰 컨테이너/인스턴스 지연 준비
+  function ensureRoadviewReady(){ return false; }
+
+  // 로드뷰 진입: 지도 → 로드뷰로 전환, 1초 후 카드 애니메이션 표시
+  function enterRoadview(library){ /* disabled */ }
+
+  function revealRoadviewAndCard(library){ try { /* roadview disabled */ } catch(_){} }
+
+  function showRoadviewInfoCard(d){
+    try {
+      const container = document.querySelector('.map-container') || document.getElementById(state.containerId);
+      if (!container) return;
+      // 기존 카드 제거
+      if (state.roadviewCardNode) { try { state.roadviewCardNode.remove(); } catch(_){} state.roadviewCardNode = null; }
+      const card = document.createElement('div');
+      card.className = 'rv-info-card';
+      card.innerHTML = `
+        <div class="rv-card-inner">
+          <div class="rv-header">
+            <div class="rv-title">${d.name || ''}</div>
+            <button class="rv-close" type="button">×</button>
+          </div>
+          <div class="rv-meta">${(d.address||'-')}</div>
+          <div class="rv-stats">
+            <div class="rv-chip green">쾌적함: <b>${d.comfortLevel || '-'}</b></div>
+            <div class="rv-chip blue">좌석혼잡도: <b>${d.crowdingLevel || '-'}</b></div>
+            <div class="rv-chip gray">좌석: <b>${(d.seatsTotal||0).toLocaleString()}석</b></div>
+            <div class="rv-chip gray">방문자: <b>${(d.visitors||0).toLocaleString()}명</b></div>
+          </div>
+        </div>`;
+      // 컨테이너가 relative가 아니면 relative로 설정하여 absolute 카드가 정렬되도록 함
+      try {
+        const comp = getComputedStyle(container);
+        if (!comp.position || comp.position === 'static') container.style.position = 'relative';
+      } catch(_){ container.style.position = 'relative'; }
+      container.appendChild(card);
+      state.roadviewCardNode = card;
+      // 등장 애니메이션
+      requestAnimationFrame(()=>{ card.classList.add('show'); });
+      // 닫기
+      const closeBtn = card.querySelector('.rv-close');
+      if (closeBtn) closeBtn.addEventListener('click', () => { try { hideRoadviewInfoCard(); } catch(_){} }, { once: true });
+    } catch(_){ }
+  }
+
+  function isAnyFilterActive(){
+    try {
+      if (window.ageFocus && window.ageFocus !== '') return true;
+      if (window.comfortFilter && window.comfortFilter !== null && window.comfortFilter !== '') return true;
+      if (window.selectedStudyCategories && window.selectedStudyCategories.size > 0) return true;
+      if (window.activeBookGenre && window.activeBookType) return true;
+      if (window.activeElectronicCategory) return true;
+      return false;
+    } catch(_){ return false; }
+  }
+
+  function showHoverForCurrentMode(d, pos){
+    if (isAnyFilterActive()) {
+      showHoverCard(d, pos);
+    } else {
+      showRoadviewInfoCard(d);
+    }
+  }
+
+  function hideRoadviewInfoCard(){
+    try {
+      if (state.roadviewCardNode) {
+        try { state.roadviewCardNode.classList.remove('show'); } catch(_){}
+        const node = state.roadviewCardNode;
+        state.roadviewCardNode = null;
+        setTimeout(()=>{ try{ node.remove(); }catch(_){ } }, 200);
+      }
+    } catch(_){ }
+  }
+
+  function exitRoadview(){ try { hideRoadviewInfoCard(); } catch(_){} }
+
+  function showToast(msg){
+    try {
+      const mapEl = document.getElementById(state.containerId);
+      if (!mapEl) return;
+      const node = document.createElement('div');
+      node.className = 'rv-toast';
+      node.textContent = msg;
+      mapEl.appendChild(node);
+      requestAnimationFrame(()=>{ node.classList.add('show'); });
+      setTimeout(()=>{ node.classList.remove('show'); setTimeout(()=>{ try{ node.remove(); }catch(_){} }, 250); }, 1800);
+    } catch(_){ }
   }
 
   function select(libraryId){

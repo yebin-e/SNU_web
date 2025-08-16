@@ -41,9 +41,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     MapView.init('map', { level: 8 });
     // 지도 초기화 후 폴리곤 로드
     setTimeout(() => {
-      if (window.MapView && window.MapView.loadInitialPolygons) {
-        window.MapView.loadInitialPolygons();
-      }
+      try { window.MapView && window.MapView.loadInitialPolygons && window.MapView.loadInitialPolygons(); } catch(_){ }
     }, 1000);
   }
   await loadLibrariesFromCSV();
@@ -853,7 +851,7 @@ function initializeIntroScreen() {
     const childrenContainer = document.getElementById('childrenLibraryContainer');
     if (childrenContainer) {
       childrenContainer.innerHTML = childrenLibraries.slice(0, 10).map((lib, index) => `
-        <div class="children-library-simple-item" onclick="showChildrenLibraryModal(${index})">
+        <div class="children-library-simple-item" onmouseenter="showChildrenLibraryModal(${index})">
           <span class="library-rank">${index + 1}</span>
           <span class="library-name">${lib.name}</span>
           <div class="library-details">
@@ -943,9 +941,12 @@ function initializeIntroScreen() {
             content: infoContent
           });
 
-          // 마커 클릭 이벤트
-          kakao.maps.event.addListener(marker, 'click', function() {
+          // 마커 호버 이벤트로 변경 (mouseover 시 열기, mouseout 시 닫기)
+          kakao.maps.event.addListener(marker, 'mouseover', function() {
             infoWindow.open(childrenMap, marker);
+          });
+          kakao.maps.event.addListener(marker, 'mouseout', function() {
+            infoWindow.close();
           });
 
           // 호버 이벤트 (간단한 툴팁)
@@ -2185,7 +2186,7 @@ function createLibraryItem(library) {
     ${comfortInfo}
     ${statusBadge}
   `;
-  div.addEventListener('click', () => { selectLibrary(library); });
+  div.addEventListener('mouseenter', () => { selectLibrary(library); });
   return div;
 }
 
