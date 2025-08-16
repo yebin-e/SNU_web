@@ -774,6 +774,13 @@ html, body { max-width: 100%; overflow-x: hidden; }
     flex: 1;
 }
 
+.library-info > div {
+    font-size: 0.92rem;
+    color: #4b5563;
+    line-height: 1.5;
+    margin-bottom: 0.25rem;
+}
+
 .children-genre-section .library-info .library-name {
     font-weight: 600;
     color: #0f172a;

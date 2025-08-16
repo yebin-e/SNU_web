@@ -381,7 +381,20 @@ function mapCsvRowToLibrary(r, id){
     '전자자료_성인_역사': toNumber(r['전자자료_성인_역사']),
     
     // 개관시간 추가
-    '개관시간': r['개관시간'] || ''
+    '개관시간': r['개관시간'] || '',
+    
+    // 인쇄자료 합계 및 장르별 데이터 추가 (CSV 맨 마지막에 위치)
+    '인쇄자료_합계': toNumber(r['인쇄자료_합계'] || 0),
+    '총류': toNumber(r['총류'] || 0),
+    '철학': toNumber(r['철학'] || 0),
+    '종교': toNumber(r['종교'] || 0),
+    '사회과학': toNumber(r['사회과학'] || 0),
+    '순수과학': toNumber(r['순수과학'] || 0),
+    '기술과학': toNumber(r['기술과학'] || 0),
+    '예술': toNumber(r['예술'] || 0),
+    '언어': toNumber(r['언어'] || 0),
+    '문학': toNumber(r['문학'] || 0),
+    '역사': toNumber(r['역사'] || 0)
   };
 }
 
@@ -705,8 +718,12 @@ function initializeIntroScreen() {
     // 중간 화면은 상단에 유지하고, 선택한 페이지만 아래에 표시
     const container = document.querySelector('.container');
     const backToMenu = document.getElementById('backToMenu');
+    const agePage = document.getElementById('agePage');
+    
     if (container) container.style.display = 'none';
     if (genrePage) genrePage.style.display = 'none';
+    if (agePage) agePage.style.display = 'none';
+    
     if (childrenPage) {
       childrenPage.style.display = 'block';
       loadChildrenData();
@@ -729,8 +746,12 @@ function initializeIntroScreen() {
     // 중간 화면은 상단에 유지하고, 선택한 페이지만 아래에 표시
     const container = document.querySelector('.container');
     const backToMenu = document.getElementById('backToMenu');
+    const agePage = document.getElementById('agePage');
+    
     if (container) container.style.display = 'none';
     if (childrenPage) childrenPage.style.display = 'none';
+    if (agePage) agePage.style.display = 'none';
+    
     if (genrePage) {
       genrePage.style.display = 'block';
       loadGenreData();
@@ -748,14 +769,20 @@ function initializeIntroScreen() {
     }
   }
 
+
+
   // 메인 화면 표시
   function showMainScreen() {
     hasScrolled = true;
     const container = document.querySelector('.container');
     const backToMenu = document.getElementById('backToMenu');
+    const agePage = document.getElementById('agePage');
+    
     // 중간 화면은 상단에 유지하고, 메인만 아래에 표시
     if (childrenPage) childrenPage.style.display = 'none';
     if (genrePage) genrePage.style.display = 'none';
+    if (agePage) agePage.style.display = 'none';
+    
     if (container) {
       container.style.display = 'block';
       container.classList.add('show');
@@ -824,7 +851,6 @@ function initializeIntroScreen() {
     showPrintAgeRanking('어린이');
     showElectronicAgeRanking('어린이');
   }
-  
 
 
 
@@ -2160,10 +2186,7 @@ function createLibraryItem(library) {
   
   // 쾌적함 정보 표시
   const comfortInfo = library.comfortLevel && library.comfortLevel !== '정보없음' ? 
-    `<div class="library-comfort" title="사람당 면적: ${library.comfortRatio?.toFixed(2)}㎡/명">
-      <span class="comfort-label">쾌적함:</span>
-      <span class="comfort-level comfort-${library.comfortLevel}">${library.comfortLevel}</span>
-    </div>` : '';
+    `<div>🌿 쾌적함: ${library.comfortLevel}</div>` : '';
   
   div.innerHTML = `
     <div class="library-name">${library.name}</div>
@@ -2171,8 +2194,8 @@ function createLibraryItem(library) {
       <div>📍 ${library.address}</div>
       <div>📚 보유도서: ${totalHoldings.toLocaleString()}권</div>
       <div>🪑 좌석: ${library.seatsTotal?.toLocaleString?.() || '-'}석 · 🖥️ PC: ${library.pcs ?? '-'}</div>
+      ${comfortInfo}
     </div>
-    ${comfortInfo}
     ${statusBadge}
   `;
   div.addEventListener('click', () => { selectLibrary(library); });
@@ -3266,8 +3289,7 @@ function initializeIntroScreen() {
     // 새로운 랭킹 시스템 초기 표시
     showDomesticRanking('total');
     showForeignRanking('total');
-    showPrintAgeRanking('어린이');
-    showElectronicAgeRanking('어린이');
+    showTotalRanking('total');
   }
   
 
@@ -4622,111 +4644,7 @@ function displayLibraries() {
   // 지도는 applyFilters에서 한번에 렌더하므로 여기서는 생략
 }
 
-function createLibraryItem(library) {
-  const div = document.createElement('div');
-  div.className = 'library-item';
-  div.dataset.id = library.id;
-  const totalHoldings = (library.holdingsDomestic||0) + (library.holdingsForeign||0);
-  const statusBadge = '';
-  
-  // 쾌적함 정보 표시
-  const comfortInfo = library.comfortLevel && library.comfortLevel !== '정보없음' ? 
-    `<div class="library-comfort" title="사람당 면적: ${library.comfortRatio?.toFixed(2)}㎡/명">
-      <span class="comfort-label">쾌적함:</span>
-      <span class="comfort-level comfort-${library.comfortLevel}">${library.comfortLevel}</span>
-    </div>` : '';
-  
-  div.innerHTML = `
-    <div class="library-name">${library.name}</div>
-    <div class="library-info">
-      <div>📍 ${library.address}</div>
-      <div>📚 보유도서: ${totalHoldings.toLocaleString()}권</div>
-      <div>🪑 좌석: ${library.seatsTotal?.toLocaleString?.() || '-'}석 · 🖥️ PC: ${library.pcs ?? '-'}</div>
-    </div>
-    ${comfortInfo}
-    ${statusBadge}
-  `;
-  div.addEventListener('click', () => { selectLibrary(library); });
-  return div;
-}
 
-function selectLibrary(library) {
-  clearSelection();
-  selectedLibrary = library;
-  document.querySelectorAll('.library-item').forEach((item) => {
-    item.classList.remove('selected');
-    if (parseInt(item.dataset.id) === library.id) item.classList.add('selected');
-  });
-  showLibraryDetail(library);
-  // 지도 마커 선택 반영 (파트너 모듈)
-  if (window.MapView) MapView.select(library.id);
-}
-
-function clearSelection() {
-  if (!selectedLibrary) return;
-  selectedLibrary = null;
-  document.querySelectorAll('.library-item').forEach((i) => i.classList.remove('selected'));
-  // 지도 마커 선택 해제 (파트너 모듈)
-  if (window.MapView) MapView.select(null);
-}
-
-function showLibraryDetail(library) {
-  const modal = document.getElementById('detailModal');
-  const modalContent = document.getElementById('modalContent');
-  const totalHoldings = (library.holdingsDomestic||0) + (library.holdingsForeign||0);
-  const isOpen = isOpenNow(library);
-  modalContent.innerHTML = `
-    <div class="library-detail">
-      <h2>${library.name}</h2>
-      <p style="color:#6b7280;margin-bottom:0.25rem;">${library.address}</p>
-      <p style="color:#6b7280;margin-bottom:1rem;">☎️ ${library.phone || '-'} · 🔗 ${library.homepage ? `<a href="${library.homepage}" target="_blank" rel="noopener">홈페이지</a>` : '-'}</p>
-      <div class="detail-section">
-        <h4>🕘 운영 정보</h4>
-        <div class="detail-grid">
-          <div class="detail-item"><div class="detail-label">개관시간</div><div class="detail-value">${library.openHours || '-'}</div></div>
-          <div class="detail-item"><div class="detail-label">휴관일</div><div class="detail-value">${library.closedDays || '-'}</div></div>
-          <div class="detail-item"><div class="detail-label">현재 상태</div><div class="detail-value">${isOpen ? '운영중' : '운영 종료'}</div></div>
-          <div class="detail-item"><div class="detail-label">개관년도</div><div class="detail-value">${library.yearOpened || '-'}</div></div>
-        </div>
-      </div>
-      <div class="detail-section">
-        <h4>📚 컬렉션</h4>
-        <div class="detail-grid">
-          <div class="detail-item"><div class="detail-label">국내서</div><div class="detail-value">${(library.holdingsDomestic||0).toLocaleString()}권</div></div>
-          <div class="detail-item"><div class="detail-label">국외서</div><div class="detail-value">${(library.holdingsForeign||0).toLocaleString()}권</div></div>
-          <div class="detail-item"><div class="detail-label">합계</div><div class="detail-value">${totalHoldings.toLocaleString()}권</div></div>
-        </div>
-      </div>
-      <div class="detail-section">
-        <h4>🪑 좌석/시설</h4>
-        <div class="detail-grid">
-          <div class="detail-item"><div class="detail-label">서비스 면적</div><div class="detail-value">${(library.area||0).toLocaleString()}㎡</div></div>
-          <div class="detail-item"><div class="detail-label">총 좌석</div><div class="detail-value">${(library.seatsTotal||0).toLocaleString()}석</div></div>
-          <div class="detail-item"><div class="detail-label">어린이 열람석</div><div class="detail-value">${(library.seatsChild||0).toLocaleString()}석</div></div>
-          <div class="detail-item"><div class="detail-label">노인/장애인 열람석</div><div class="detail-value">${(library.seatsSeniorDisabled||0).toLocaleString()}석</div></div>
-          <div class="detail-item"><div class="detail-label">이용자용 PC</div><div class="detail-value">${(library.pcs||0).toLocaleString()}대</div></div>
-        </div>
-      </div>
-      <div class="detail-section">
-        <h4>🏷️ 카테고리</h4>
-        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-          ${library.bookCategories.map((c) => `<span style=\"background:#ede3d6;color:#5a3d26;padding:.35rem .6rem;border-radius:999px;font-size:.85rem;border:1px solidhsla(217, 91.20%, 59.80%, 0.71);\">${c}</span>`).join('')}
-          ${library.spaceCategories.map((c) => `<span style=\"background:#ecfdf5;color:#065f46;padding:.35rem .6rem;border-radius:999px;font-size:.85rem;border:1px solid #3b82f6;\">${c}</span>`).join('')}
-        </div>
-      </div>
-      <div class="detail-section">
-        <h4>📍 주변 시설</h4>
-        <div class="detail-grid">
-          <div class="detail-item"><div class="detail-label">🏠 주거시설</div><div class="detail-value">${library.nearby.residential.map((i) => `<div>• ${i}</div>`).join('')}</div></div>
-          <div class="detail-item"><div class="detail-label">🏪 상가</div><div class="detail-value">${library.nearby.commercial.map((i) => `<div>• ${i}</div>`).join('')}</div></div>
-        </div>
-      </div>
-    </div>
-  `;
-  document.getElementById('detailModal').style.display = 'block';
-  requestAnimationFrame(() => { const mc = document.querySelector('.modal-content'); if (mc) mc.classList.add('show'); });
-  // charts/wordcloud 제거 요청에 따라 렌더 호출 중단
-}
 
 function closeModal() { const mc = document.querySelector('.modal-content'); if (mc) mc.classList.remove('show'); setTimeout(()=>{ document.getElementById('detailModal').style.display='none'; },150); }
 
@@ -4942,28 +4860,61 @@ function createLibraryListHTML() {
 
 // 전체 도서 랭킹 표시 (국내서 + 국외서)
 function showTotalRanking(genre) {
-  const allLibs = allLibraries.length ? allLibraries : sampleLibraries;
+  console.log('showTotalRanking 호출됨, genre:', genre);
+  console.log('allLibraries 길이:', allLibraries.length);
+  
+  // 첫 번째 도서관의 데이터 구조 확인
+  if (allLibraries.length > 0) {
+    const firstLib = allLibraries[0];
+    console.log('첫 번째 도서관 전체 데이터:', firstLib);
+    console.log('첫 번째 도서관 인쇄자료_합계:', firstLib['인쇄자료_합계']);
+    console.log('첫 번째 도서관 총류:', firstLib['총류']);
+    console.log('첫 번째 도서관 철학:', firstLib['철학']);
+    console.log('첫 번째 도서관 문학:', firstLib['문학']);
+  }
+  
+  const allLibs = allLibraries.length ? allLibraries : [];
   const rankingList = document.getElementById('totalRankingList');
   
-  if (!rankingList) return;
+  console.log('rankingList 요소:', rankingList);
+  
+  if (!rankingList) {
+    console.log('totalRankingList 요소를 찾을 수 없음');
+    return;
+  }
   
   let sortedLibraries = [];
   
   if (genre === 'total') {
     // 전체 도서 대출량 기준으로 정렬 (인쇄자료_합계) - 오름차순
+    console.log('전체 장르 필터링 시작');
     sortedLibraries = allLibs
-      .filter(lib => (lib['인쇄자료_합계'] || 0) > 0)
+      .filter(lib => {
+        const value = lib['인쇄자료_합계'] || 0;
+        console.log(`도서관 ${lib.name}: 인쇄자료_합계 = ${value}`);
+        return value > 0;
+      })
       .sort((a, b) => (a['인쇄자료_합계'] || 0) - (b['인쇄자료_합계'] || 0));
   } else {
     // 특정 장르 기준으로 정렬 (총류, 철학, 종교, 사회과학, 순수과학, 기술과학, 예술, 언어, 문학, 역사) - 오름차순
     const genreKey = genre;
+    console.log(`${genre} 장르 필터링 시작`);
     sortedLibraries = allLibs
-      .filter(lib => (lib[genreKey] || 0) > 0)
+      .filter(lib => {
+        const value = lib[genreKey] || 0;
+        console.log(`도서관 ${lib.name}: ${genre} = ${value}`);
+        return value > 0;
+      })
       .sort((a, b) => (a[genreKey] || 0) - (b[genreKey] || 0));
   }
   
+  console.log('필터링된 도서관 수:', sortedLibraries.length);
+  console.log('첫 번째 도서관 데이터:', sortedLibraries[0]);
+  
   // 상위 10개 도서관 표시 (오름차순이므로 뒤에서 10개)
   const top10 = sortedLibraries.slice(-10).reverse();
+  
+  console.log('상위 10개 도서관:', top10);
   
   rankingList.innerHTML = top10.map((lib, index) => {
     const rank = index + 1;
@@ -4987,4 +4938,319 @@ function showTotalRanking(genre) {
       </div>
     `;
   }).join('');
+  
+  console.log('랭킹 HTML 생성 완료');
 }
+
+// 도서 장르별 랭킹 탭 이벤트 리스너 추가
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOMContentLoaded 이벤트 발생');
+  
+  // 도서 장르별 랭킹 탭 이벤트 리스너
+  const totalTabs = document.querySelectorAll('[data-type="total"]');
+  console.log('data-type="total" 탭 개수:', totalTabs.length);
+  
+  totalTabs.forEach((tab, index) => {
+    console.log(`탭 ${index}:`, tab);
+    tab.addEventListener('click', function() {
+      console.log('탭 클릭됨:', this);
+      const genre = this.getAttribute('data-genre');
+      console.log('선택된 장르:', genre);
+      
+      // 같은 그룹에서만 active 처리
+      const group = this.closest('.ranking-category') || document;
+      group.querySelectorAll('[data-type="total"]').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      
+      // 해당 랭킹 표시
+      console.log('showTotalRanking 호출 예정');
+      showTotalRanking(genre);
+    });
+  });
+  
+  // 초기 도서 장르별 랭킹 표시
+  setTimeout(() => {
+    console.log('초기 랭킹 표시 시도');
+    if (typeof showTotalRanking === 'function') {
+      console.log('showTotalRanking 함수 존재, 호출');
+      showTotalRanking('total');
+    } else {
+      console.log('showTotalRanking 함수가 존재하지 않음');
+    }
+  }, 100);
+  
+  // 연령대별 페이지 메뉴 버튼 이벤트 리스너 추가
+  const agePageBtn = document.getElementById('agePageBtn');
+  if (agePageBtn) {
+    agePageBtn.addEventListener('click', function() {
+      console.log('연령대별 페이지 버튼 클릭됨');
+      showAgePage();
+    });
+  }
+  
+  // 연령대별 페이지 돌아가기 버튼 이벤트 리스너 추가
+  const backToMiddleFromAge = document.getElementById('backToMiddleFromAge');
+  if (backToMiddleFromAge) {
+    backToMiddleFromAge.addEventListener('click', function() {
+      console.log('연령대별 페이지에서 돌아가기 버튼 클릭됨');
+      hideAgePage();
+    });
+  }
+  
+  // 연령대별 랭킹 탭 이벤트 리스너 추가
+  const printAgeTabs = document.querySelectorAll('[data-type="print"]');
+  const electronicAgeTabs = document.querySelectorAll('[data-type="electronic"]');
+  
+  printAgeTabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      const age = this.getAttribute('data-age');
+      console.log('인쇄자료 연령대별 탭 클릭됨:', age);
+      
+      // 같은 그룹에서만 active 처리
+      const group = this.closest('.ranking-category');
+      group.querySelectorAll('[data-type="print"]').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      
+      // 해당 랭킹 표시
+      showPrintAgeRanking(age);
+    });
+  });
+  
+  electronicAgeTabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      const age = this.getAttribute('data-age');
+      console.log('전자자료 연령대별 탭 클릭됨:', age);
+      
+      // 같은 그룹에서만 active 처리
+      const group = this.closest('.ranking-category');
+      group.querySelectorAll('[data-type="electronic"]').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      
+      // 해당 랭킹 표시
+      showElectronicAgeRanking(age);
+    });
+  });
+});
+
+// 연령대별 페이지 표시 함수
+function showAgePage() {
+  console.log('=== showAgePage 함수 호출됨 ===');
+  
+  // 다른 페이지들 숨기기
+  const container = document.querySelector('.container');
+  const childrenPage = document.getElementById('childrenPage');
+  const genrePage = document.getElementById('genrePage');
+  const agePage = document.getElementById('agePage');
+  
+  console.log('페이지 요소들:', { container: !!container, childrenPage: !!childrenPage, genrePage: !!genrePage, agePage: !!agePage });
+  
+  if (container) {
+    container.style.display = 'none';
+    console.log('메인 컨테이너 숨김');
+  }
+  if (childrenPage) {
+    childrenPage.style.display = 'none';
+    console.log('어린이 페이지 숨김');
+  }
+  if (genrePage) {
+    genrePage.style.display = 'none';
+    console.log('장르별 페이지 숨김');
+  }
+  
+  // 연령대별 페이지 표시
+  if (agePage) {
+    agePage.style.display = 'block';
+    console.log('연령대별 페이지 표시됨');
+  } else {
+    console.error('연령대별 페이지 요소를 찾을 수 없음!');
+    return;
+  }
+  
+  // 중간 화면은 상단에 유지하고, 선택한 페이지만 아래에 표시
+  const middleScreen = document.getElementById('middleScreen');
+  if (middleScreen) {
+    middleScreen.style.display = 'flex';
+    console.log('중간 화면 표시됨');
+  }
+  
+  // 연령대별 페이지를 중간 화면 아래로 스크롤
+  if (agePage) {
+    agePage.scrollIntoView({ behavior: 'smooth' });
+    console.log('연령대별 페이지로 스크롤됨');
+  }
+  
+  // 초기 랭킹 표시
+  setTimeout(() => {
+    console.log('초기 랭킹 표시 시작...');
+    showPrintAgeRanking('어린이');
+    showElectronicAgeRanking('어린이');
+    
+    // 연령대별 랭킹 탭 이벤트 설정
+    setupAgeRankingTabs();
+    
+    console.log('초기 랭킹 표시 완료');
+  }, 100);
+}
+
+// 연령대별 페이지 숨기기 함수
+function hideAgePage() {
+  console.log('hideAgePage 함수 호출됨');
+  
+  const agePage = document.getElementById('agePage');
+  if (agePage) {
+    agePage.style.display = 'none';
+    console.log('연령대별 페이지 숨겨짐');
+  }
+  
+  // 중간 화면 표시
+  const middleScreen = document.getElementById('middleScreen');
+  if (middleScreen) middleScreen.style.display = 'flex';
+}
+
+// 인쇄자료 연령대별 랭킹 표시 함수
+function showPrintAgeRanking(age) {
+  console.log('=== showPrintAgeRanking 함수 호출됨, age:', age, '===');
+  
+  const rankingList = document.getElementById('printAgeRankingList');
+  if (!rankingList) {
+    console.error('printAgeRankingList 요소를 찾을 수 없음');
+    return;
+  }
+  
+  console.log('printAgeRankingList 요소 찾음:', rankingList);
+  
+  // 연령대별 데이터 필터링 및 정렬
+  let sortedLibraries = [];
+  
+  if (age === '어린이') {
+    sortedLibraries = allLibraries
+      .filter(lib => (lib['어린이 자료(인쇄)수'] || 0) > 0)
+      .sort((a, b) => (b['어린이 자료(인쇄)수'] || 0) - (a['어린이 자료(인쇄)수'] || 0));
+  } else if (age === '청소년') {
+    sortedLibraries = allLibraries
+      .filter(lib => (lib['청소년 자료(인쇄)수'] || 0) > 0)
+      .sort((a, b) => (b['청소년 자료(인쇄)수'] || 0) - (a['청소년 자료(인쇄)수'] || 0));
+  } else if (age === '성인') {
+    sortedLibraries = allLibraries
+      .filter(lib => (lib['성인 자료(인쇄)수'] || 0) > 0)
+      .sort((a, b) => (b['성인 자료(인쇄)수'] || 0) - (a['성인 자료(인쇄)수'] || 0));
+  }
+  
+  // 상위 10개 도서관 표시
+  const top10 = sortedLibraries.slice(0, 10);
+  
+  rankingList.innerHTML = top10.map((lib, index) => {
+    const rank = index + 1;
+    let usageRate;
+    
+    if (age === '어린이') {
+      usageRate = lib['어린이 자료(인쇄)수'] || 0;
+    } else if (age === '청소년') {
+      usageRate = lib['청소년 자료(인쇄)수'] || 0;
+    } else if (age === '성인') {
+      usageRate = lib['성인 자료(인쇄)수'] || 0;
+    }
+    
+    return `
+      <div class="ranking-item">
+        <span class="ranking-number">${rank}</span>
+        <div class="ranking-info">
+          <div class="ranking-library-name">${lib.name}</div>
+          <div class="ranking-detail">${age} 인쇄자료: ${usageRate.toLocaleString()}권</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  console.log(`${age} 인쇄자료 랭킹 표시 완료`);
+}
+
+// 전자자료 연령대별 랭킹 표시 함수
+function showElectronicAgeRanking(age) {
+  console.log('=== showElectronicAgeRanking 함수 호출됨, age:', age, '===');
+  
+  const rankingList = document.getElementById('electronicAgeRankingList');
+  if (!rankingList) {
+    console.error('electronicAgeRankingList 요소를 찾을 수 없음');
+    return;
+  }
+  
+  console.log('electronicAgeRankingList 요소 찾음:', rankingList);
+  
+  // 연령대별 데이터 필터링 및 정렬
+  let sortedLibraries = [];
+  
+  if (age === '어린이') {
+    sortedLibraries = allLibraries
+      .filter(lib => (lib['어린이 자료(전자)수'] || 0) > 0)
+      .sort((a, b) => (b['어린이 자료(전자)수'] || 0) - (a['어린이 자료(전자)수'] || 0));
+  } else if (age === '청소년') {
+    sortedLibraries = allLibraries
+      .filter(lib => (lib['청소년 자료(전자)수'] || 0) > 0)
+      .sort((a, b) => (b['청소년 자료(전자)수'] || 0) - (a['청소년 자료(전자)수'] || 0));
+  } else if (age === '성인') {
+    sortedLibraries = allLibraries
+      .filter(lib => (lib['성인 자료(전자)수'] || 0) > 0)
+      .sort((a, b) => (b['성인 자료(전자)수'] || 0) - (a['성인 자료(전자)수'] || 0));
+  }
+  
+  // 상위 10개 도서관 표시
+  const top10 = sortedLibraries.slice(0, 10);
+  
+  rankingList.innerHTML = top10.map((lib, index) => {
+    const rank = index + 1;
+    let usageRate;
+    
+    if (age === '어린이') {
+      usageRate = lib['어린이 자료(전자)수'] || 0;
+    } else if (age === '청소년') {
+      usageRate = lib['청소년 자료(전자)수'] || 0;
+    } else if (age === '성인') {
+      usageRate = lib['성인 자료(전자)수'] || 0;
+    }
+    
+    return `
+      <div class="ranking-item">
+        <span class="ranking-number">${rank}</span>
+        <div class="ranking-info">
+          <div class="ranking-library-name">${lib.name}</div>
+          <div class="ranking-detail">${age} 전자자료: ${usageRate.toLocaleString()}권</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  console.log(`${age} 전자자료 랭킹 표시 완료`);
+}
+
+// 인쇄자료 연령대별 탭 클릭 핸들러
+function handlePrintAgeTabClick(clickedTab, age) {
+  console.log('인쇄자료 탭 클릭됨:', age);
+  
+  // 모든 인쇄자료 탭에서 active 클래스 제거
+  const allPrintTabs = document.querySelectorAll('#agePage [data-type="print"]');
+  allPrintTabs.forEach(tab => tab.classList.remove('active'));
+  
+  // 클릭된 탭에 active 클래스 추가
+  clickedTab.classList.add('active');
+  
+  // 해당 연령대 랭킹 표시
+  showPrintAgeRanking(age);
+}
+
+// 전자자료 연령대별 탭 클릭 핸들러
+function handleElectronicAgeTabClick(clickedTab, age) {
+  console.log('전자자료 탭 클릭됨:', age);
+  
+  // 모든 전자자료 탭에서 active 클래스 제거
+  const allElectronicTabs = document.querySelectorAll('#agePage [data-type="electronic"]');
+  allElectronicTabs.forEach(tab => tab.classList.remove('active'));
+  
+  // 클릭된 탭에 active 클래스 추가
+  clickedTab.classList.add('active');
+  
+  // 해당 연령대 랭킹 표시
+  showElectronicAgeRanking(age);
+}
+
+
