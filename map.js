@@ -33,6 +33,39 @@
     global.kakao.maps.load(()=>{ state.ready = true; cb(); });
   }
 
+  // 도서 장르별 대표 도서 타이틀 매핑 (국내서/국외서 분리)
+  function getFeaturedBookTitleForGenre(genre, bookType){
+    try {
+      const domestic = {
+        '총류': '브리태니커 백과사전',
+        '철학': '차라투스트라는 이렇게 말했다',
+        '종교': '성경',
+        '사회과학': '총, 균, 쇠',
+        '순수과학': '시간의 역사',
+        '기술과학': '클린 코드',
+        '예술': '미술의 역사',
+        '언어': '영문법 인 유즈',
+        '문학': '어린 왕자',
+        '역사': '사피엔스'
+      };
+      const foreign = {
+        '총류': 'Encyclopaedia Britannica',
+        '철학': 'Thus Spoke Zarathustra',
+        '종교': 'The Bible',
+        '사회과학': 'Guns, Germs, and Steel',
+        '순수과학': 'A Brief History of Time',
+        '기술과학': 'Clean Code',
+        '예술': 'The Story of Art',
+        '언어': 'English Grammar in Use',
+        '문학': 'The Little Prince',
+        '역사': 'Sapiens'
+      };
+      const isForeign = (bookType === 'foreign');
+      const table = isForeign ? foreign : domestic;
+      return table[genre] || (isForeign ? 'The Little Prince' : '어린 왕자');
+    } catch(_){ return (bookType === 'foreign') ? 'The Little Prince' : '어린 왕자'; }
+  }
+
   function ensureRoadviewInfra(){
     try {
       const container = document.querySelector('.map-container') || document.getElementById(state.containerId);
@@ -373,6 +406,7 @@
   }
 
   function render(libraries){
+    // 화면 자동 스크롤 제거: 레이아웃을 어지럽혀 지도 컨테이너가 줄어드는 현상 방지
     ensureKakaoLoaded(()=>{
       if (!state.map) init(state.containerId, state.options);
       clear();
@@ -419,6 +453,14 @@
 
       const rows = filteredLibraries;
       console.log('최종 렌더링할 도서관 수:', rows.length); // 디버깅
+      // 컨테이너 표시 직후 크기 보정
+      try {
+        const mapEl = document.getElementById(state.containerId);
+        if (mapEl) {
+          requestAnimationFrame(()=>{ try { state.map && state.map.relayout && state.map.relayout(); } catch(_){ } });
+          setTimeout(()=>{ try { state.map && state.map.relayout && state.map.relayout(); } catch(_){ } }, 120);
+        }
+      } catch(_){ }
       
       if (rows.length === 0){
         // 데이터가 없어도 기본 중심/레벨로 지도 표시는 유지
@@ -506,7 +548,14 @@
         }
         // 마커 호버 시 정보 카드 표시/숨김 (필터 상태에 따라 카드 종류 전환)
         kakao.maps.event.addListener(marker, 'mouseover', () => {
-          showHoverForCurrentMode(d, pos);
+          // Top3이면서 도서 종류/세부 장르 맥락이 존재하면 대표 도서 정보 포함
+          if (rankForBadge && rankForBadge <= 3 && window.activeBookGenre && window.activeBookType) {
+            const bt = window.activeBookType === 'total' ? 'domestic' : window.activeBookType; // 대표 도서 선정은 임의로 국내/국외 기준 필요
+            const featured = getFeaturedBookTitleForGenre(window.activeBookGenre, bt);
+            showHoverForCurrentMode(Object.assign({}, d, { __featuredBookTitle: featured }), pos);
+          } else {
+            showHoverForCurrentMode(d, pos);
+          }
         });
         kakao.maps.event.addListener(marker, 'mouseout', () => {
           // 필터 모드인 경우: 호버 카드 제거
@@ -637,6 +686,60 @@
     });
   }
   
+  // 인기/어린이 친화도 사분위 계산 및 등급 도우미
+  function ensurePopularityQuantiles(){
+    try {
+      if (window.popularityQuantiles) return;
+      const all = (window.allLibraries || []).filter(x => x && typeof x.visitors === 'number');
+      const values = all.map(x => x.visitors || 0).filter(v => isFinite(v) && v > 0);
+      if (!values.length) { window.popularityQuantiles = null; return; }
+      const sorted = values.sort((a,b)=>a-b);
+      const n = sorted.length;
+      const q = (p)=> sorted[Math.max(0, Math.min(n-1, Math.floor((n-1)*p)))];
+      window.popularityQuantiles = { q1: q(0.25), q2: q(0.5), q3: q(0.75) };
+    } catch(_){ window.popularityQuantiles = null; }
+  }
+
+  function ensureChildFriendlyQuantiles(){
+    try {
+      if (window.childFriendlyQuantiles) return;
+      const all = (window.allLibraries || []).filter(x => x);
+      const values = all
+        .map(x => (Number(x.loansPrintChild)||0) + (Number(x.eUseChild)||0))
+        .filter(v => isFinite(v) && v > 0);
+      if (!values.length) { window.childFriendlyQuantiles = null; return; }
+      const sorted = values.sort((a,b)=>a-b);
+      const n = sorted.length;
+      const q = (p)=> sorted[Math.max(0, Math.min(n-1, Math.floor((n-1)*p)))];
+      window.childFriendlyQuantiles = { q1: q(0.25), q2: q(0.5), q3: q(0.75) };
+    } catch(_){ window.childFriendlyQuantiles = null; }
+  }
+
+  function getPopularityLevel(lib){
+    try {
+      const v = Number(lib.visitors)||0;
+      if (!isFinite(v) || v <= 0) return '없음';
+      ensurePopularityQuantiles();
+      const qs = window.popularityQuantiles; if (!qs) return '보통';
+      if (v > qs.q3) return '높음';
+      if (v > qs.q2) return '보통';
+      if (v > qs.q1) return '낮음';
+      return '낮음';
+    } catch(_){ return '보통'; }
+  }
+
+  function getChildFriendlyLevel(lib){
+    try {
+      const c = (Number(lib.loansPrintChild)||0) + (Number(lib.eUseChild)||0);
+      if (!isFinite(c) || c <= 0) return '없음';
+      ensureChildFriendlyQuantiles();
+      const qs = window.childFriendlyQuantiles; if (!qs) return '보통';
+      if (c > qs.q3) return '높음';
+      if (c > qs.q2) return '보통';
+      if (c > qs.q1) return '낮음';
+      return '낮음';
+    } catch(_){ return '보통'; }
+  }
 
   function showHoverCard(d, pos){
     // 이미 호버 카드가 있으면 제거
@@ -700,12 +803,24 @@
     const bookInfo = (window.activeBookGenre && d) ? (()=>{
       const type = window.activeBookType || 'domestic';
       let count = 0;
+      let label = '전체';
       if (type === 'domestic') {
         count = (d.domesticCategoriesData||[]).find(c=>c.name===window.activeBookGenre)?.value || 0;
-      } else {
+        label = '국내서';
+      } else if (type === 'foreign') {
         count = (d.foreignCategoriesData||[]).find(c=>c.name===window.activeBookGenre)?.value || 0;
+        label = '국외서';
+      } else if (type === 'total') {
+        const dom = (d.domesticCategoriesData||[]).find(c=>c.name===window.activeBookGenre)?.value || 0;
+        const forv = (d.foreignCategoriesData||[]).find(c=>c.name===window.activeBookGenre)?.value || 0;
+        count = (dom || 0) + (forv || 0);
+        label = '전체';
+      } else {
+        // 알 수 없는 타입은 표시만 전체로 처리
+        label = '전체';
       }
-      return `<div class=\"mini-card\" style=\"background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:6px 10px;\">\n                <div style=\"font-size:12px;color:#9a3412;\">${type==='domestic'?'국내서':'국외서'} · ${window.activeBookGenre}</div>\n                <div style=\"font-weight:700;color:#7c2d12;\">${count.toLocaleString()}권</div>\n              </div>`;
+      const featured = d.__featuredBookTitle ? `<div style=\"font-size:12px;color:#9a3412;opacity:.9;margin-top:4px;\">대표 도서: <b>${d.__featuredBookTitle}</b></div>` : '';
+      return `<div class=\"mini-card\" style=\"background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:6px 10px;\">\n                <div style=\"font-size:12px;color:#9a3412;\">${label} · ${window.activeBookGenre}</div>\n                <div style=\"font-weight:700;color:#7c2d12;\">${count.toLocaleString()}권</div>${featured}\n              </div>`;
     })() : '';
     const electronicInfo = '';
 
@@ -727,6 +842,11 @@
       </svg>
     `;
     
+    // 기본 모드 여부(필터 미적용): 나이/장르/전자/쾌적/혼잡도/스페셜 랭킹 모두 비활성
+    const isBaseMode = !window.ageFocus && !window.activeBookGenre && !window.activeElectronicCategory && (!window.selectedStudyCategories || window.selectedStudyCategories.size===0) && !window.comfortFilter && !window.specialRanking;
+    const popularityText = isBaseMode ? getPopularityLevel(d) : '';
+    const childFriendlyText = isBaseMode ? getChildFriendlyLevel(d) : '';
+
     box.innerHTML = `
       <div class="popup-header">
         ${window.ageFocus ? `<div class="rank-badge">${ageRank}</div>` : ''}
@@ -753,6 +873,16 @@
             <div style="font-size:12px;color:#075985;">좌석혼잡도</div>
             <div style="font-weight:700;color:#075985;">${d.crowdingLevel || '-'}</div>
           </div>`: ''}
+          ${isBaseMode ? `
+          <div class="mini-card" style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:6px 10px;">
+            <div style="font-size:12px;color:#9a3412;">인기</div>
+            <div style="font-weight:700;color:#7c2d12;">${popularityText}</div>
+          </div>
+          <div class="mini-card" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:6px 10px;">
+            <div style="font-size:12px;color:#991b1b;">어린이 친화도</div>
+            <div style="font-weight:700;color:#7f1d1d;">${childFriendlyText}</div>
+          </div>
+          `: ''}
           ${bookInfo}
         </div>
       </div>
@@ -918,6 +1048,9 @@
       if (state.roadviewCardNode) { try { state.roadviewCardNode.remove(); } catch(_){} state.roadviewCardNode = null; }
       const card = document.createElement('div');
       card.className = 'rv-info-card';
+      // 기본 모드에서 인기/어린이 친화 지표 계산
+      const popLevel = getPopularityLevel(d);
+      const childLevel = getChildFriendlyLevel(d);
       card.innerHTML = `
         <div class="rv-card-inner">
           <div class="rv-header">
@@ -930,6 +1063,8 @@
             <div class="rv-chip blue">좌석혼잡도: <b>${d.crowdingLevel || '-'}</b></div>
             <div class="rv-chip gray">좌석: <b>${(d.seatsTotal||0).toLocaleString()}석</b></div>
             <div class="rv-chip gray">방문자: <b>${(d.visitors||0).toLocaleString()}명</b></div>
+            <div class="rv-chip gray">인기: <b>${popLevel}</b></div>
+            <div class="rv-chip gray">어린이 친화도: <b>${childLevel}</b></div>
           </div>
         </div>`;
       // 컨테이너가 relative가 아니면 relative로 설정하여 absolute 카드가 정렬되도록 함
