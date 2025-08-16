@@ -289,8 +289,8 @@ html, body { max-width: 100%; overflow-x: hidden; }
     display: flex;
     flex-direction: row;
     gap: 2.5rem;
-    width: 100%;
-    max-width: 1400px;
+    width: 80%;
+    max-width: 1200px;
     margin: 0 auto;
     justify-content: center;
     align-items: stretch;
@@ -310,7 +310,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
     backdrop-filter: blur(10px); 
     animation: fadeInUp 0.6s ease both;
     flex: 1;
-    min-width: 350px;
+    min-width: 300px;
     min-height: 250px;
     width: 100%;
 }
@@ -578,6 +578,25 @@ html, body { max-width: 100%; overflow-x: hidden; }
     gap: 1.5rem;
     margin-bottom: 1rem;
     max-width: 100%;
+}
+.ranking-category2 { 
+    background: #ffffff; 
+    border-radius: 15px; 
+    padding: 1.5rem; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); 
+    width: 45%;
+    max-width: 45%;
+}
+
+
+.ranking-category3 { 
+    background: #ffffff; 
+    border-radius: 15px; 
+    padding: 1.5rem; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); 
+    padding-left: 50%;
+    width: 45%;
+    max-width: 45%;
 }
 
 .ranking-category { 
@@ -1101,7 +1120,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 
 /* 카테고리 바 (페이드인) */
 .category-bar { max-width: 1200px; margin: 0.75rem auto 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; }
-.category-group { background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem; animation: fadeIn .4s ease both; min-width: 0; }
+.category-group { background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem; animation: fadeIn .4s ease both; width: 100%; }
 .category-group:nth-child(1) { animation-delay: .05s; }
 .category-group:nth-child(2) { animation-delay: .12s; }
 .category-group:nth-child(3) { animation-delay: .18s; }
@@ -1625,6 +1644,8 @@ html, body { max-width: 100%; overflow-x: hidden; }
 /* 단어구름 */
 .wordcloud{width:100%;height:260px;border:1px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center}
 
+
+
 /* 뷰 토글 버튼 우상단 고정 */
 .view-toggle.pinned{position:absolute;right:.75rem;top:.75rem;padding:.45rem .7rem;border:1px solid rgba(0,0,0,0.08);background:#ffffff;border-radius:10px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.2);color:#0f172a;z-index:2}
 
@@ -2096,3 +2117,167 @@ html, body { max-width: 100%; overflow-x: hidden; }
     min-width: 45px;
   }
 }
+
+
+/* ========== 카드 컨테이너(2x2 배치용) ========== */
+.program-card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  @media (max-width: 900px) {
+    .program-card-grid { grid-template-columns: 1fr; }
+  }
+  
+  /* ========== 단일 도서관 카드 ========== */
+  .library-program-card {
+    --card-bg: #fff;
+    --card-bd: #e5e7eb;
+    --title: #0f172a;
+    --muted: #475569;
+    --chip-bg: #f1f5f9;
+    --chip-bd: #e2e8f0;
+    --chip-tx: #0f172a;
+    --shadow: 0 6px 22px rgba(2, 6, 23, 0.06);
+  
+    background: var(--card-bg);
+    border: 1px solid var(--card-bd);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+  }
+  
+  /* 헤더 */
+  .library-program-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--card-bd);
+    background: linear-gradient(180deg, #fafafa, transparent);
+  }
+  .library-program-card__title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--title);
+    line-height: 1.2;
+    letter-spacing: -0.2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .library-program-card__meta {
+    color: var(--muted);
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+  
+  /* 본문(스크롤 영역) */
+  .library-program-card__body {
+    padding: 14px 18px 16px;
+    display: grid;
+    gap: 12px;
+    /* 내용이 길어질 수 있으니 최대 높이 + 스크롤 */
+    max-height: 320px;
+    overflow: auto;
+  }
+  
+  /* 카테고리 섹션 */
+  .program-section {
+    border: 1px dashed var(--card-bd);
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #fcfdff;
+  }
+  .program-section__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .program-section__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--chip-tx);
+    background: var(--chip-bg);
+    border: 1px solid var(--chip-bd);
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .program-section__list {
+    margin: 0;
+    padding-left: 16px; /* 점 목록 */
+  }
+  .program-section__list li {
+    margin: 4px 0;
+    line-height: 1.38;
+    word-break: keep-all;     /* 한국어 줄바꿈 보기 좋게 */
+    overflow-wrap: anywhere;  /* 아주 긴 단어/제목도 줄바꿈 */
+  }
+  
+  /* 푸터(버튼 등) */
+  .library-program-card__footer {
+    margin-top: auto;
+    padding: 12px 18px 16px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    border-top: 1px solid var(--card-bd);
+  }
+  .library-program-card__btn {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--card-bd);
+    background: #f8fafc;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform .06s ease, background .2s ease;
+  }
+  .library-program-card__btn:hover { background: #eef2f7; }
+  .library-program-card__btn:active { transform: translateY(1px); }
+  
+  /* 색상 바리에이션(선택) */
+  .program-section--inf { background:#f8fbff; }
+  .program-section--kids { background:#fffaf6; }
+  .program-section--youth { background:#f8fff9; }
+  .program-section--family { background:#f9f7ff; }
+
+  .info-section a {
+    color: #2563eb;
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 2px solid #2563eb;
+    padding-bottom: 2px;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+  .info-section a:hover {
+    color: #1e40af;
+    border-color: #1e40af;
+  }
+  
+  .search-container {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  #programSearchBox {
+    width: 60%;
+    max-width: 400px;
+    padding: 10px 14px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+  #programSearchBox:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 4px rgba(37, 99, 235, 0.4);
+  }
+  
