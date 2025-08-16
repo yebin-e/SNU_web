@@ -36,6 +36,30 @@ window.addEventListener('DOMContentLoaded', async () => {
   initializeUI();
   initializeEventListeners();
   setupCategoryChips();
+  // 안전망: 메뉴 버튼 위임 클릭(어떠한 이유로 바인딩 실패 시에도 동작)
+  try {
+    document.addEventListener('click', (e) => {
+      const mainBtn = e.target && e.target.closest && e.target.closest('#mainPageBtn');
+      if (mainBtn) {
+        e.preventDefault();
+        console.log('[delegate] mainPageBtn clicked');
+        currentStep = 'main';
+        try {
+          const invoke = () => { try { window.showMainScreen && window.showMainScreen(); } catch(err){ console.error(err); } };
+          if (typeof window.showMainScreen === 'function') {
+            invoke();
+          } else {
+            // 아직 노출 전이면 잠깐 대기하며 재시도
+            let attempts = 0; const timer = setInterval(() => {
+              attempts++;
+              if (typeof window.showMainScreen === 'function') { clearInterval(timer); invoke(); }
+              else if (attempts > 20) { clearInterval(timer); }
+            }, 50);
+          }
+        } catch(err){ console.error(err); }
+      }
+    }, { capture: true });
+  } catch(_){ }
   // 지도 초기화 (파트너 모듈)
   if (window.MapView) {
     MapView.init('map', { level: 8 });
@@ -397,7 +421,6 @@ function mapCsvRowToLibrary(r, id){
     '역사': toNumber(r['역사'] || 0)
   };
 }
-
 function initializeIntroScreen() {
   introScreen = document.getElementById('introScreen');
   middleScreen = document.getElementById('middleScreen');
@@ -652,10 +675,16 @@ function initializeIntroScreen() {
     const backToMiddleFromGenre = document.getElementById('backToMiddleFromGenre');
 
     if (mainPageBtn) {
-      mainPageBtn.addEventListener('click', () => {
-        currentStep = 'main';
-        showMainScreen();
-      });
+      // 중복 등록 방지 후 바인딩
+      try { mainPageBtn.replaceWith(mainPageBtn.cloneNode(true)); } catch(_){ }
+      const freshBtn = document.getElementById('mainPageBtn');
+      if (freshBtn) {
+        freshBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          currentStep = 'main';
+          showMainScreen();
+        }, { once: false });
+      }
     }
 
     if (childrenPageBtn) {
@@ -709,7 +738,7 @@ function initializeIntroScreen() {
     setTimeout(() => {
       introScreen.style.display = 'none';
       middleScreen.style.opacity = '1';
-      setupMenuButtons(); // 메뉴 버튼 이벤트 설정
+      try { setupMenuButtons(); } catch(_){ }
     }, 400);
   }
 
@@ -777,6 +806,13 @@ function initializeIntroScreen() {
     const container = document.querySelector('.container');
     const backToMenu = document.getElementById('backToMenu');
     const agePage = document.getElementById('agePage');
+    // 인트로 화면은 완전히 숨김 (오버레이 겹침 방지)
+    try {
+      if (introScreen) {
+        introScreen.classList.add('hidden');
+        introScreen.style.display = 'none';
+      }
+    } catch(_){ }
     
     // 중간 화면은 상단에 유지하고, 메인만 아래에 표시
     if (childrenPage) childrenPage.style.display = 'none';
@@ -787,10 +823,29 @@ function initializeIntroScreen() {
       container.style.display = 'block';
       container.classList.add('show');
     }
+    // 지도 컨테이너 리사이즈 보정: display 전환 후 강제 리사이즈
+    try {
+      const mapEl = document.getElementById('map');
+      if (mapEl) {
+        // 다음 페인트에 리사이즈
+        requestAnimationFrame(()=>{
+          try { window.MapView && MapView.render && MapView.render(window.currentLibraries || allLibraries || []); } catch(_){}
+          try { window.dispatchEvent(new Event('resize')); } catch(_){}
+        });
+        // 지연 보정 한 번 더
+        setTimeout(()=>{ try { window.dispatchEvent(new Event('resize')); } catch(_){} }, 120);
+      }
+    } catch(_){ }
     if (middleScreen) middleScreen.style.display = 'flex';
     if (backToMenu) backToMenu.style.display = 'none';
-    if (container) container.scrollIntoView({ behavior: 'smooth' });
+    if (container) {
+      try { container.scrollIntoView({ behavior: 'smooth' }); } catch(_){ }
+      // 보정: 즉시 스크롤 한 번 더
+      try { window.scrollTo({ top: container.offsetTop || 0, behavior: 'smooth' }); } catch(_){ }
+    }
   }
+  // 전역 공개: 위임 클릭 등 외부에서도 호출 가능하도록 노출
+  try { window.showMainScreen = showMainScreen; } catch(_){ }
 
   // 중간 화면이 초기부터 보이는 구성에서는 메뉴 버튼 이벤트를 즉시 설정
   try { setupMenuButtons(); } catch (e) { /* 초기 호출 실패 무시 */ }
@@ -848,8 +903,6 @@ function initializeIntroScreen() {
     // 새로운 랭킹 시스템 초기 표시
     showDomesticRanking('total');
     showForeignRanking('total');
-    showPrintAgeRanking('어린이');
-    showElectronicAgeRanking('어린이');
   }
 
 
@@ -1179,8 +1232,7 @@ function initializeIntroScreen() {
     window.childrenElectronicData = librariesWithElectronicData;
     window.electronicGenreList = genres;
     
-    // 탭 이벤트 설정
-    setupElectronicTabs();
+    // 전자자료 연령대 탭 제거됨
     
     // 초기 전체 랭킹 표시
     showElectronicRanking('total');
@@ -1200,9 +1252,6 @@ function initializeIntroScreen() {
       });
     });
   }
-
-
-  
   // 새로운 랭킹 시스템 탭 설정
   function setupAdvancedRankingTabs() {
     // 국내서/국외서 랭킹 탭
@@ -1979,7 +2028,6 @@ function handleBookTypeSelection(btn, value) {
   
   applyFilters();
 }
-
 function isOpenNow(library) {
   try {
     const now = new Date();
@@ -2634,7 +2682,6 @@ function getCrowdingLevel(r) {
   if (crowdingRatio >= 1.0) return '보통';
   return '여유';
 }
-
 function mapCsvRowToLibrary(r, id){
   // 주제 카테고리 합산
   const cats = [
@@ -3098,28 +3145,29 @@ function initializeIntroScreen() {
   }
   function onTouchEnd() { touchStartY = null; }
 
-  // 메뉴 버튼 이벤트
   function setupMenuButtons() {
     const mainPageBtn = document.getElementById('mainPageBtn');
     const childrenPageBtn = document.getElementById('childrenPageBtn');
     const backToMiddle = document.getElementById('backToMiddle');
     const backToMenu = document.getElementById('backToMenu');
     const backToMiddleFromGenre = document.getElementById('backToMiddleFromGenre');
-
+  
     if (mainPageBtn) {
-      mainPageBtn.addEventListener('click', () => {
+      // ✅ 단순·안정 바인딩
+      mainPageBtn.addEventListener('click', (e) => {
+        e.preventDefault();
         currentStep = 'main';
         showMainScreen();
       });
     }
-
+  
     if (childrenPageBtn) {
       childrenPageBtn.addEventListener('click', () => {
         currentStep = 'children';
         showChildrenPage();
       });
     }
-    
+  
     const genrePageBtn = document.getElementById('genrePageBtn');
     if (genrePageBtn) {
       genrePageBtn.addEventListener('click', () => {
@@ -3127,21 +3175,21 @@ function initializeIntroScreen() {
         showGenrePage();
       });
     }
-
+  
     if (backToMiddle) {
       backToMiddle.addEventListener('click', () => {
         currentStep = 'middle';
         hideChildrenPage();
       });
     }
-
+  
     if (backToMenu) {
       backToMenu.addEventListener('click', () => {
         currentStep = 'middle';
         hideMainScreen();
       });
     }
-    
+  
     if (backToMiddleFromGenre) {
       backToMiddleFromGenre.addEventListener('click', () => {
         currentStep = 'middle';
@@ -3149,6 +3197,7 @@ function initializeIntroScreen() {
       });
     }
   }
+  
 
   // 중간 화면 표시
   function showMiddleScreen() {
@@ -3289,7 +3338,9 @@ function initializeIntroScreen() {
     // 새로운 랭킹 시스템 초기 표시
     showDomesticRanking('total');
     showForeignRanking('total');
-    showTotalRanking('total');
+    // 연령대별 랭킹 초기 표시 복구
+    try { showPrintAgeRanking('어린이'); } catch(_){}
+    try { showElectronicAgeRanking('어린이'); } catch(_){}
   }
   
 
@@ -4137,7 +4188,6 @@ function initializeUI() {
     mapEl.appendChild(msg);
   }
 }
-
 function initializeEventListeners() {
   document.getElementById('searchBtn').addEventListener('click', () => { clearFiltersExcept(new Set(['search'])); applyFilters(); });
   document.getElementById('searchInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') { clearFiltersExcept(new Set(['search'])); applyFilters(); } });
@@ -4857,127 +4907,12 @@ function createLibraryListHTML() {
     </div>
   `;
 }
-
 // 전체 도서 랭킹 표시 (국내서 + 국외서)
-function showTotalRanking(genre) {
-  console.log('showTotalRanking 호출됨, genre:', genre);
-  console.log('allLibraries 길이:', allLibraries.length);
-  
-  // 첫 번째 도서관의 데이터 구조 확인
-  if (allLibraries.length > 0) {
-    const firstLib = allLibraries[0];
-    console.log('첫 번째 도서관 전체 데이터:', firstLib);
-    console.log('첫 번째 도서관 인쇄자료_합계:', firstLib['인쇄자료_합계']);
-    console.log('첫 번째 도서관 총류:', firstLib['총류']);
-    console.log('첫 번째 도서관 철학:', firstLib['철학']);
-    console.log('첫 번째 도서관 문학:', firstLib['문학']);
-  }
-  
-  const allLibs = allLibraries.length ? allLibraries : [];
-  const rankingList = document.getElementById('totalRankingList');
-  
-  console.log('rankingList 요소:', rankingList);
-  
-  if (!rankingList) {
-    console.log('totalRankingList 요소를 찾을 수 없음');
-    return;
-  }
-  
-  let sortedLibraries = [];
-  
-  if (genre === 'total') {
-    // 전체 도서 대출량 기준으로 정렬 (인쇄자료_합계) - 오름차순
-    console.log('전체 장르 필터링 시작');
-    sortedLibraries = allLibs
-      .filter(lib => {
-        const value = lib['인쇄자료_합계'] || 0;
-        console.log(`도서관 ${lib.name}: 인쇄자료_합계 = ${value}`);
-        return value > 0;
-      })
-      .sort((a, b) => (a['인쇄자료_합계'] || 0) - (b['인쇄자료_합계'] || 0));
-  } else {
-    // 특정 장르 기준으로 정렬 (총류, 철학, 종교, 사회과학, 순수과학, 기술과학, 예술, 언어, 문학, 역사) - 오름차순
-    const genreKey = genre;
-    console.log(`${genre} 장르 필터링 시작`);
-    sortedLibraries = allLibs
-      .filter(lib => {
-        const value = lib[genreKey] || 0;
-        console.log(`도서관 ${lib.name}: ${genre} = ${value}`);
-        return value > 0;
-      })
-      .sort((a, b) => (a[genreKey] || 0) - (b[genreKey] || 0));
-  }
-  
-  console.log('필터링된 도서관 수:', sortedLibraries.length);
-  console.log('첫 번째 도서관 데이터:', sortedLibraries[0]);
-  
-  // 상위 10개 도서관 표시 (오름차순이므로 뒤에서 10개)
-  const top10 = sortedLibraries.slice(-10).reverse();
-  
-  console.log('상위 10개 도서관:', top10);
-  
-  rankingList.innerHTML = top10.map((lib, index) => {
-    const rank = index + 1;
-    let usageRate, detailText;
-    
-    if (genre === 'total') {
-      usageRate = lib['인쇄자료_합계'] || 0;
-      detailText = `전체 도서: ${usageRate.toLocaleString()}권`;
-    } else {
-      usageRate = lib[genre] || 0;
-      detailText = `${genre} 장르: ${usageRate.toLocaleString()}권`;
-    }
-    
-    return `
-      <div class="ranking-item">
-        <span class="ranking-number">${rank}</span>
-        <div class="ranking-info">
-          <div class="ranking-library-name">${lib.name}</div>
-          <div class="ranking-detail">${detailText}</div>
-        </div>
-      </div>
-    `;
-  }).join('');
-  
-  console.log('랭킹 HTML 생성 완료');
-}
+function showTotalRanking(){ /* deprecated: legacy total ranking removed */ }
 
 // 도서 장르별 랭킹 탭 이벤트 리스너 추가
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('DOMContentLoaded 이벤트 발생');
-  
-  // 도서 장르별 랭킹 탭 이벤트 리스너
-  const totalTabs = document.querySelectorAll('[data-type="total"]');
-  console.log('data-type="total" 탭 개수:', totalTabs.length);
-  
-  totalTabs.forEach((tab, index) => {
-    console.log(`탭 ${index}:`, tab);
-    tab.addEventListener('click', function() {
-      console.log('탭 클릭됨:', this);
-      const genre = this.getAttribute('data-genre');
-      console.log('선택된 장르:', genre);
-      
-      // 같은 그룹에서만 active 처리
-      const group = this.closest('.ranking-category') || document;
-      group.querySelectorAll('[data-type="total"]').forEach(t => t.classList.remove('active'));
-      this.classList.add('active');
-      
-      // 해당 랭킹 표시
-      console.log('showTotalRanking 호출 예정');
-      showTotalRanking(genre);
-    });
-  });
-  
-  // 초기 도서 장르별 랭킹 표시
-  setTimeout(() => {
-    console.log('초기 랭킹 표시 시도');
-    if (typeof showTotalRanking === 'function') {
-      console.log('showTotalRanking 함수 존재, 호출');
-      showTotalRanking('total');
-    } else {
-      console.log('showTotalRanking 함수가 존재하지 않음');
-    }
-  }, 100);
+  // 장르 페이지는 새로운 랭킹 시스템만 사용
   
   // 연령대별 페이지 메뉴 버튼 이벤트 리스너 추가
   const agePageBtn = document.getElementById('agePageBtn');
@@ -4987,6 +4922,13 @@ document.addEventListener('DOMContentLoaded', function() {
       showAgePage();
     });
   }
+  // 문화 프로그램 페이지 버튼
+  const programPageBtn = document.getElementById('programPageBtn');
+  if (programPageBtn) {
+    programPageBtn.addEventListener('click', function(){
+      showProgramPage();
+    });
+  }
   
   // 연령대별 페이지 돌아가기 버튼 이벤트 리스너 추가
   const backToMiddleFromAge = document.getElementById('backToMiddleFromAge');
@@ -4994,6 +4936,13 @@ document.addEventListener('DOMContentLoaded', function() {
     backToMiddleFromAge.addEventListener('click', function() {
       console.log('연령대별 페이지에서 돌아가기 버튼 클릭됨');
       hideAgePage();
+    });
+  }
+  // 문화 프로그램 페이지 돌아가기
+  const backToMiddleFromProgram = document.getElementById('backToMiddleFromProgram');
+  if (backToMiddleFromProgram) {
+    backToMiddleFromProgram.addEventListener('click', function(){
+      hideProgramPage();
     });
   }
   
@@ -5107,6 +5056,68 @@ function hideAgePage() {
   if (middleScreen) middleScreen.style.display = 'flex';
 }
 
+// 문화 프로그램 페이지 표시/숨김 + 초기화
+function showProgramPage(){
+  try {
+    const container = document.querySelector('.container');
+    const childrenPage = document.getElementById('childrenPage');
+    const genrePage = document.getElementById('genrePage');
+    const agePage = document.getElementById('agePage');
+    const programPage = document.getElementById('programPage');
+    if (container) container.style.display = 'none';
+    if (childrenPage) childrenPage.style.display = 'none';
+    if (genrePage) genrePage.style.display = 'none';
+    if (agePage) agePage.style.display = 'none';
+    if (programPage) {
+      programPage.style.display = 'block';
+      programPage.scrollIntoView({ behavior: 'smooth' });
+      initProgramPage();
+    }
+  } catch(_){ }
+}
+
+function hideProgramPage(){
+  try {
+    const programPage = document.getElementById('programPage');
+    if (programPage) programPage.style.display = 'none';
+    const middleScreen = document.getElementById('middleScreen');
+    if (middleScreen) middleScreen.style.display = 'flex';
+  } catch(_){ }
+}
+
+
+// 연령대별 페이지 탭 이벤트 설정 (장르별 페이지와 동일한 UI 상호작용)
+function setupAgeRankingTabs(){
+  try {
+    const agePage = document.getElementById('agePage');
+    if (!agePage) return;
+
+    // 인쇄자료 탭
+    const printTabs = agePage.querySelectorAll('[data-type="print"]');
+    printTabs.forEach(tab => {
+      tab.addEventListener('click', function(){
+        const group = this.closest('.ranking-category');
+        if (group) group.querySelectorAll('[data-type="print"]').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        const age = this.getAttribute('data-age');
+        try { showPrintAgeRanking(age); } catch(_){ }
+      });
+    });
+
+    // 전자자료 탭
+    const electronicTabs = agePage.querySelectorAll('[data-type="electronic"]');
+    electronicTabs.forEach(tab => {
+      tab.addEventListener('click', function(){
+        const group = this.closest('.ranking-category');
+        if (group) group.querySelectorAll('[data-type="electronic"]').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        const age = this.getAttribute('data-age');
+        try { showElectronicAgeRanking(age); } catch(_){ }
+      });
+    });
+  } catch(_){ }
+}
+
 // 인쇄자료 연령대별 랭킹 표시 함수
 function showPrintAgeRanking(age) {
   console.log('=== showPrintAgeRanking 함수 호출됨, age:', age, '===');
@@ -5119,48 +5130,24 @@ function showPrintAgeRanking(age) {
   
   console.log('printAgeRankingList 요소 찾음:', rankingList);
   
-  // 연령대별 데이터 필터링 및 정렬
-  let sortedLibraries = [];
-  
-  if (age === '어린이') {
-    sortedLibraries = allLibraries
-      .filter(lib => (lib['어린이 자료(인쇄)수'] || 0) > 0)
-      .sort((a, b) => (b['어린이 자료(인쇄)수'] || 0) - (a['어린이 자료(인쇄)수'] || 0));
-  } else if (age === '청소년') {
-    sortedLibraries = allLibraries
-      .filter(lib => (lib['청소년 자료(인쇄)수'] || 0) > 0)
-      .sort((a, b) => (b['청소년 자료(인쇄)수'] || 0) - (a['청소년 자료(인쇄)수'] || 0));
-  } else if (age === '성인') {
-    sortedLibraries = allLibraries
-      .filter(lib => (lib['성인 자료(인쇄)수'] || 0) > 0)
-      .sort((a, b) => (b['성인 자료(인쇄)수'] || 0) - (a['성인 자료(인쇄)수'] || 0));
-  }
+  // 연령대별 데이터 필터링 및 정렬 (인쇄자료_연령_도서종류 합산)
+  const genres = ['총류','철학','종교','사회과학','순수과학','기술과학','예술','언어','문학','역사'];
+  const withTotals = (allLibraries || []).map(lib => {
+    const total = genres.reduce((sum, g) => sum + (parseInt(lib[`인쇄자료_${age}_${g}`]) || 0), 0);
+    return { lib, total };
+  }).filter(x => x.total > 0);
+  const sortedLibraries = withTotals.sort((a,b)=> b.total - a.total).slice(0, 10);
   
   // 상위 10개 도서관 표시
-  const top10 = sortedLibraries.slice(0, 10);
-  
-  rankingList.innerHTML = top10.map((lib, index) => {
-    const rank = index + 1;
-    let usageRate;
-    
-    if (age === '어린이') {
-      usageRate = lib['어린이 자료(인쇄)수'] || 0;
-    } else if (age === '청소년') {
-      usageRate = lib['청소년 자료(인쇄)수'] || 0;
-    } else if (age === '성인') {
-      usageRate = lib['성인 자료(인쇄)수'] || 0;
-    }
-    
-    return `
-      <div class="ranking-item">
-        <span class="ranking-number">${rank}</span>
-        <div class="ranking-info">
-          <div class="ranking-library-name">${lib.name}</div>
-          <div class="ranking-detail">${age} 인쇄자료: ${usageRate.toLocaleString()}권</div>
-        </div>
+  rankingList.innerHTML = sortedLibraries.map(({ lib, total }, index) => `
+    <div class="ranking-item">
+      <span class="ranking-number">${index + 1}</span>
+      <div class="ranking-info">
+        <div class="ranking-library-name">${lib.name}</div>
+        <div class="ranking-detail">${age} 인쇄자료: ${total.toLocaleString()}권</div>
       </div>
-    `;
-  }).join('');
+    </div>
+  `).join('');
   
   console.log(`${age} 인쇄자료 랭킹 표시 완료`);
 }
@@ -5177,48 +5164,24 @@ function showElectronicAgeRanking(age) {
   
   console.log('electronicAgeRankingList 요소 찾음:', rankingList);
   
-  // 연령대별 데이터 필터링 및 정렬
-  let sortedLibraries = [];
-  
-  if (age === '어린이') {
-    sortedLibraries = allLibraries
-      .filter(lib => (lib['어린이 자료(전자)수'] || 0) > 0)
-      .sort((a, b) => (b['어린이 자료(전자)수'] || 0) - (a['어린이 자료(전자)수'] || 0));
-  } else if (age === '청소년') {
-    sortedLibraries = allLibraries
-      .filter(lib => (lib['청소년 자료(전자)수'] || 0) > 0)
-      .sort((a, b) => (b['청소년 자료(전자)수'] || 0) - (a['청소년 자료(전자)수'] || 0));
-  } else if (age === '성인') {
-    sortedLibraries = allLibraries
-      .filter(lib => (lib['성인 자료(전자)수'] || 0) > 0)
-      .sort((a, b) => (b['성인 자료(전자)수'] || 0) - (a['성인 자료(전자)수'] || 0));
-  }
+  // 연령대별 데이터 필터링 및 정렬 (전자자료_연령_도서종류 합산)
+  const genres = ['총류','철학','종교','사회과학','순수과학','기술과학','예술','언어','문학','역사'];
+  const withTotals = (allLibraries || []).map(lib => {
+    const total = genres.reduce((sum, g) => sum + (parseInt(lib[`전자자료_${age}_${g}`]) || 0), 0);
+    return { lib, total };
+  }).filter(x => x.total > 0);
+  const sortedLibraries = withTotals.sort((a,b)=> b.total - a.total).slice(0, 10);
   
   // 상위 10개 도서관 표시
-  const top10 = sortedLibraries.slice(0, 10);
-  
-  rankingList.innerHTML = top10.map((lib, index) => {
-    const rank = index + 1;
-    let usageRate;
-    
-    if (age === '어린이') {
-      usageRate = lib['어린이 자료(전자)수'] || 0;
-    } else if (age === '청소년') {
-      usageRate = lib['청소년 자료(전자)수'] || 0;
-    } else if (age === '성인') {
-      usageRate = lib['성인 자료(전자)수'] || 0;
-    }
-    
-    return `
-      <div class="ranking-item">
-        <span class="ranking-number">${rank}</span>
-        <div class="ranking-info">
-          <div class="ranking-library-name">${lib.name}</div>
-          <div class="ranking-detail">${age} 전자자료: ${usageRate.toLocaleString()}권</div>
-        </div>
+  rankingList.innerHTML = sortedLibraries.map(({ lib, total }, index) => `
+    <div class="ranking-item">
+      <span class="ranking-number">${index + 1}</span>
+      <div class="ranking-info">
+        <div class="ranking-library-name">${lib.name}</div>
+        <div class="ranking-detail">${age} 전자자료: ${total.toLocaleString()}권</div>
       </div>
-    `;
-  }).join('');
+    </div>
+  `).join('');
   
   console.log(`${age} 전자자료 랭킹 표시 완료`);
 }
@@ -5252,5 +5215,3 @@ function handleElectronicAgeTabClick(clickedTab, age) {
   // 해당 연령대 랭킹 표시
   showElectronicAgeRanking(age);
 }
-
-
