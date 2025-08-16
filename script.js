@@ -1732,11 +1732,18 @@ function initializeEventListeners() {
   // 해당 장르의 비율이 높은 도서관 10개 선택
   const filteredLibraries = allLibraries
     .filter(lib => {
-      if (bookType === 'domestic') {
+      if (bookType === 'total') {
+        // 전체 인쇄자료 기준으로 필터링
+        const totalPrint = lib['인쇄자료_합계'] || 0;
+        const genreValue = lib[genre] || 0;
+        return totalPrint > 0 && genreValue > 0;
+      } else if (bookType === 'domestic') {
+        // 국내서 기준으로 필터링
         const totalDomestic = lib.holdingsDomestic || 0;
         const genreValue = lib.domesticCategories?.find(cat => cat.name === genre)?.value || 0;
         return totalDomestic > 0 && genreValue > 0;
       } else if (bookType === 'foreign') {
+        // 국외서 기준으로 필터링
         const totalForeign = lib.holdingsForeign || 0;
         const genreValue = lib.foreignCategories?.find(cat => cat.name === genre)?.value || 0;
         return totalForeign > 0 && genreValue > 0;
@@ -1744,7 +1751,11 @@ function initializeEventListeners() {
       return false;
     })
     .map(lib => {
-      if (bookType === 'domestic') {
+      if (bookType === 'total') {
+        // 전체 인쇄자료 기준으로 장르별 수량 계산
+        const genreValue = lib[genre] || 0;
+        return { ...lib, genreCount: genreValue };
+      } else if (bookType === 'domestic') {
         const genreValue = lib.domesticCategories?.find(cat => cat.name === genre)?.value || 0;
         return { ...lib, genreCount: genreValue };
       } else if (bookType === 'foreign') {
@@ -1779,7 +1790,7 @@ function setupCategoryChips() {
     const value = btn.dataset.value;
     
     if (type === 'bookType') {
-      // 1단계: 국내서/국외서 선택
+      // 1단계: 전체/국내서/국외서 선택
       handleBookTypeSelection(btn, value);
     } else if (type === 'book') {
       // 2단계: 세부 분류 단일 선택 (중복 불가) + 절대 수량 Top10
@@ -1796,7 +1807,7 @@ function setupCategoryChips() {
       }
       btn.classList.add('active');
       selectedBookCategories.add(value);
-      if (!selectedBookType) selectedBookType = 'domestic';
+      if (!selectedBookType) selectedBookType = 'total'; // 기본값을 'total'로 변경
       window.activeBookGenre = value;
       window.activeBookType = selectedBookType;
       filterLibrariesByGenre(selectedBookType, value);
@@ -4196,11 +4207,18 @@ function initializeEventListeners() {
   // 해당 장르의 비율이 높은 도서관 10개 선택
   const filteredLibraries = allLibraries
     .filter(lib => {
-      if (bookType === 'domestic') {
+      if (bookType === 'total') {
+        // 전체 인쇄자료 기준으로 필터링
+        const totalPrint = lib['인쇄자료_합계'] || 0;
+        const genreValue = lib[genre] || 0;
+        return totalPrint > 0 && genreValue > 0;
+      } else if (bookType === 'domestic') {
+        // 국내서 기준으로 필터링
         const totalDomestic = lib.holdingsDomestic || 0;
         const genreValue = lib.domesticCategories?.find(cat => cat.name === genre)?.value || 0;
         return totalDomestic > 0 && genreValue > 0;
       } else if (bookType === 'foreign') {
+        // 국외서 기준으로 필터링
         const totalForeign = lib.holdingsForeign || 0;
         const genreValue = lib.foreignCategories?.find(cat => cat.name === genre)?.value || 0;
         return totalForeign > 0 && genreValue > 0;
@@ -4208,7 +4226,11 @@ function initializeEventListeners() {
       return false;
     })
     .map(lib => {
-      if (bookType === 'domestic') {
+      if (bookType === 'total') {
+        // 전체 인쇄자료 기준으로 장르별 수량 계산
+        const genreValue = lib[genre] || 0;
+        return { ...lib, genreCount: genreValue };
+      } else if (bookType === 'domestic') {
         const genreValue = lib.domesticCategories?.find(cat => cat.name === genre)?.value || 0;
         return { ...lib, genreCount: genreValue };
       } else if (bookType === 'foreign') {
@@ -4243,7 +4265,7 @@ function setupCategoryChips() {
     const value = btn.dataset.value;
     
     if (type === 'bookType') {
-      // 1단계: 국내서/국외서 선택
+      // 1단계: 전체/국내서/국외서 선택
       handleBookTypeSelection(btn, value);
     } else if (type === 'book') {
       // 2단계: 세부 분류 단일 선택 (중복 불가) + 절대 수량 Top10
@@ -4260,7 +4282,7 @@ function setupCategoryChips() {
       }
       btn.classList.add('active');
       selectedBookCategories.add(value);
-      if (!selectedBookType) selectedBookType = 'domestic';
+      if (!selectedBookType) selectedBookType = 'total'; // 기본값을 'total'로 변경
       window.activeBookGenre = value;
       window.activeBookType = selectedBookType;
       filterLibrariesByGenre(selectedBookType, value);
@@ -4916,4 +4938,53 @@ function createLibraryListHTML() {
       </div>
     </div>
   `;
+}
+
+// 전체 도서 랭킹 표시 (국내서 + 국외서)
+function showTotalRanking(genre) {
+  const allLibs = allLibraries.length ? allLibraries : sampleLibraries;
+  const rankingList = document.getElementById('totalRankingList');
+  
+  if (!rankingList) return;
+  
+  let sortedLibraries = [];
+  
+  if (genre === 'total') {
+    // 전체 도서 대출량 기준으로 정렬 (인쇄자료_합계) - 오름차순
+    sortedLibraries = allLibs
+      .filter(lib => (lib['인쇄자료_합계'] || 0) > 0)
+      .sort((a, b) => (a['인쇄자료_합계'] || 0) - (b['인쇄자료_합계'] || 0));
+  } else {
+    // 특정 장르 기준으로 정렬 (총류, 철학, 종교, 사회과학, 순수과학, 기술과학, 예술, 언어, 문학, 역사) - 오름차순
+    const genreKey = genre;
+    sortedLibraries = allLibs
+      .filter(lib => (lib[genreKey] || 0) > 0)
+      .sort((a, b) => (a[genreKey] || 0) - (b[genreKey] || 0));
+  }
+  
+  // 상위 10개 도서관 표시 (오름차순이므로 뒤에서 10개)
+  const top10 = sortedLibraries.slice(-10).reverse();
+  
+  rankingList.innerHTML = top10.map((lib, index) => {
+    const rank = index + 1;
+    let usageRate, detailText;
+    
+    if (genre === 'total') {
+      usageRate = lib['인쇄자료_합계'] || 0;
+      detailText = `전체 도서: ${usageRate.toLocaleString()}권`;
+    } else {
+      usageRate = lib[genre] || 0;
+      detailText = `${genre} 장르: ${usageRate.toLocaleString()}권`;
+    }
+    
+    return `
+      <div class="ranking-item">
+        <span class="ranking-number">${rank}</span>
+        <div class="ranking-info">
+          <div class="ranking-library-name">${lib.name}</div>
+          <div class="ranking-detail">${detailText}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
