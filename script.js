@@ -2480,10 +2480,13 @@ function createLibraryDetailHTML(library) {
 
 // 도서관 상세 정보 닫기
 function closeLibraryDetail() {
-  // 도서관 리스트로 복원
+  // 도서관 리스트로 복원 - 기존 HTML 유지
   const libraryList = document.getElementById('libraryList');
   if (libraryList) {
-    libraryList.innerHTML = createLibraryListHTML();
+    // 중복된 필터 컨트롤 제거하고 기존 내용만 표시
+    libraryList.innerHTML = `
+      <div class="library-list-inner" id="libraryListInner"></div>
+    `;
   }
   
   // 필터 적용하여 원래 상태로 복구
@@ -4837,17 +4840,17 @@ function createLibraryDetailHTML(library) {
   `;
 }
 
-// 도서관 상세 정보 닫기
-function closeLibraryDetail() {
-  // 도서관 리스트로 복원
-  const libraryList = document.getElementById('libraryList');
-  if (libraryList) {
-    libraryList.innerHTML = createLibraryListHTML();
-  }
-  
-  // 필터 적용하여 원래 상태로 복구
-  applyFilters();
-}
+// 도서관 상세 정보 닫기 (중복 제거)
+// function closeLibraryDetail() {
+//   // 도서관 리스트로 복원
+//   const libraryList = document.getElementById('libraryList');
+//   if (libraryList) {
+//     libraryList.innerHTML = createLibraryListHTML();
+//   }
+//   
+//   // 필터 적용하여 원래 상태로 복구
+//   applyFilters();
+// }
 
 // 도서관 리스트 HTML 생성 (기존 리스트 복원용)
 function createLibraryListHTML() {
