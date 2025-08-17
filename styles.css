@@ -536,9 +536,58 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .genre-content { max-width: 1200px; margin: 0 auto; padding: 2rem; color: #111827; }
 
 /* 장르 페이지 상단 소개 박스 흰색 카드화 */
-.genre-page .info-section { background:#ffffff; border:1px solid rgba(0,0,0,0.08); border-radius:15px; padding:2rem; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
-.genre-page .info-section h2 { color:#111827 }
-.genre-page .info-section p { color:#374151 }
+.genre-page .info-section { 
+    background:#ffffff; 
+    border:1px solid rgba(0,0,0,0.08); 
+    border-radius:15px; 
+    padding:1.5rem; 
+    box-shadow:0 4px 12px rgba(0,0,0,0.08); 
+    margin-bottom: 1rem;
+}
+
+/* 문화 프로그램 페이지에만 적용되는 스타일 */
+#programPage .info-section { 
+    max-width: 65%;
+    margin-left: auto;
+    margin-right: auto;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+/* 연령대별 페이지에만 적용되는 스타일 */
+#agePage .info-section { 
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+/* 장르별 페이지에만 적용되는 스타일 */
+#genrePage .info-section { 
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+/* 어린이 페이지에만 적용되는 스타일 */
+#childrenPage .info-section { 
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+}
+.genre-page .info-section h2 { 
+    color:#111827; 
+    margin-bottom: 0.5rem; 
+    margin-top: 0;
+}
+.genre-page .info-section p { 
+    color:#374151; 
+    margin: 0.5rem 0 0 0;
+}
+
+/* 문화 프로그램 페이지에만 적용되는 스타일 */
+#programPage .info-section h2 { 
+    text-align: center;
+}
+#programPage .info-section p { 
+    text-align: center;
+}
 
 .genre-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #3b82f6; }
 .genre-header h1 { color: #ffffff; }
@@ -551,7 +600,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .genre-main {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1rem;
 }
 
 .genre-tabs-container { background: #ffffff; border-radius: 15px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
@@ -1112,21 +1161,48 @@ html, body { max-width: 100%; overflow-x: hidden; }
 
 .header h1 { font-size: 1.75rem; margin: 0; text-align: center; color: var(--button); }
 
-.search-container { display: flex; gap: 0.5rem; max-width: 560px; margin: 0 auto; }
+.search-container { display: flex; gap: 0.5rem; max-width: 900px; margin: 0 auto; }
 .search-container input { flex: 1; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 10px; font-size: 1rem; outline: none; background: #fff; }
-.search-container button { padding: 0.75rem 1.25rem; background-color: var(--button); color: #111827; border: none; border-radius: 10px; cursor: pointer; font-size: 1rem; transition: transform .08s ease, background-color .2s ease; }
-.search-container button:hover { background-color: var(--button-dark); }
+.search-container button { padding: 0.75rem 1.25rem; background-color: #60a5fa; color: #ffffff; border: none; border-radius: 10px; cursor: pointer; font-size: 1rem; transition: transform .08s ease, background-color .2s ease; }
+.search-container button:hover { background-color: #5e8ae8; }
 .search-container button:active { transform: translateY(1px); }
 
 /* 카테고리 바 (페이드인) */
-.category-bar { max-width: 1200px; margin: 0.75rem auto 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; }
-.category-group { background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem; animation: fadeIn .4s ease both; width: 100%; }
+.category-bar { 
+    max-width: 1200px; 
+    margin: 0.75rem auto 0; 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 1rem; 
+    justify-items: center;
+    align-items: stretch;
+}
+.category-group { 
+    background: #ffffff; 
+    border: 1px solid var(--border); 
+    border-radius: 12px; 
+    padding: 0.75rem; 
+    animation: fadeIn .4s ease both; 
+    width: 100%; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center;
+    text-align: center;
+    min-height: 120px;
+    justify-content: center;
+}
 .category-group:nth-child(1) { animation-delay: .05s; }
 .category-group:nth-child(2) { animation-delay: .12s; }
 .category-group:nth-child(3) { animation-delay: .18s; }
 .category-title { font-size: 0.9rem; color: #0f172a; margin-bottom: 0.5rem; }
 .category-chips#studyCategoryChips .chip.active{background:#3b82f6;border-color:#3b82f6;color:#ffffff}
-.category-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.category-chips { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 0.5rem; 
+    justify-content: center;
+    width: 100%;
+}
 .chip { padding: 0.45rem 0.75rem; font-size: 0.9rem; border-radius: 999px; border: 1px solid #3b82f6; background: #fff; color: #2563eb; cursor: pointer; transition: transform .12s ease, background .2s ease, border-color .2s ease, color .2s ease; }
 .chip:hover { background: #eff6ff; border-color: #2563eb; color: #1e40af; }
 .chip:active { transform: scale(.98); }
@@ -1179,7 +1255,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .main-content { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 180px); min-height: calc(100vh - 180px); }
 
 /* 지도 컨테이너 (임시) */
-.map-container { flex: 2; position: relative; background: transparent; padding: 1rem; height: 100%; min-height: 520px; }
+.map-container { flex: 2; position: relative; background: transparent; padding: 1rem; height: 100%; min-height: 600px; margin-top: -1rem; margin-bottom: -2rem; }
 #map { width: 100%; height: 100%; min-height: 520px; background: #0f172a; border: 1px solid rgba(255,255,255,0.18); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 28px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.06); }
 .map-empty-msg { color: #e5e7eb; font-size: 0.95rem; background: rgba(255,255,255,0.08); padding: 0.5rem 0.75rem; border: 1px solid rgba(255,255,255,0.18); border-radius: 8px; }
 
@@ -1206,7 +1282,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .checkbox-label{display:flex;align-items:center;gap:.45rem}
 .sidebar-header .filter-controls{margin-top:.55rem;margin-bottom:.8rem;display:flex;gap:.6rem .6rem;flex-wrap:wrap}
 .sidebar-header .age-filter-section{margin-top:.8rem;padding-top:.8rem;border-top:1px solid rgba(0,0,0,0.08)}
-.sidebar-header .age-select{padding:.7rem .8rem;border:1px solid var(--border);border-radius:10px;background:#ffffff;color:#111827;min-height:44px;width:100%}
+.sidebar-header .age-select{padding:.7rem .8rem;border:1px solid var(--border);border-radius:10px;background:#ffffff;color:#111827;min-height:44px;width:auto;min-width:200px}
 
 /* 카드 느낌 강화 */
 .sidebar{background:transparent}
@@ -1697,7 +1773,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .d3-boundary path{fill:#f8fafc;stroke:#cbd5e1;stroke-width:1.2}
 .d3-marker{fill:#2563eb;stroke:#fff;stroke-width:2;cursor:pointer;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15))}
 .d3-marker:hover{fill:#1d4ed8}
-.d3-marker.selected{fill:#8b5e3c}
+.d3-marker.selected{fill:#1d4ed8}
 /* 지하철 노선 스타일 */
 .d3-subway path{fill:none;stroke:#94a3b8;stroke-width:1.5;opacity:.85}
 
@@ -1769,9 +1845,9 @@ html, body { max-width: 100%; overflow-x: hidden; }
   
 /* 지도 마커 옆 Top3 랭킹 배지 */
 .map-rank-badge{position:absolute;transform:translate(-50%, 0) translate(0, 8px);background:#111827;color:#fff;border-radius:999px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25);pointer-events:none}
-.map-rank-badge.rank-1{background:linear-gradient(135deg,#f59e0b,#fbbf24)}
-.map-rank-badge.rank-2{background:linear-gradient(135deg,#9ca3af,#e5e7eb); color:#111827}
-.map-rank-badge.rank-3{background:linear-gradient(135deg,#b45309,#d97706)}
+.map-rank-badge.rank-1{background:linear-gradient(135deg,#3b82f6,#60a5fa)}
+.map-rank-badge.rank-2{background:linear-gradient(135deg,#10b981,#34d399)}
+.map-rank-badge.rank-3{background:linear-gradient(135deg,#f59e0b,#fbbf24)}
 
   
 
@@ -1820,7 +1896,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 /* Age Focus Popup Styles */
 .age-focus-popup {
   background: #ffffff;
-  border: 2px solid #4CAF50;
+  border: 2px solid #93c5fd;
   border-radius: 16px;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
   padding: 0;
@@ -1836,7 +1912,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 }
 
 .popup-header {
-  background: #4CAF50;
+  background: #93c5fd;
   color: white;
   padding: 16px 20px;
   display: flex;
@@ -1962,7 +2038,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 }
 
 .library-detail-header {
-  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  background: linear-gradient(135deg, #93c5fd, #bfdbfe);
   color: #ffffff;
   padding: 1.5rem;
   position: relative;
@@ -1982,16 +2058,17 @@ html, body { max-width: 100%; overflow-x: hidden; }
   background: rgba(255, 255, 255, 0.2);
   border: none;
   color: #ffffff;
-  width: 32px;
-  height: 32px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
   flex-shrink: 0;
+  margin-right: 1rem;
 }
 
 .library-detail-close:hover {
@@ -2124,7 +2201,44 @@ html, body { max-width: 100%; overflow-x: hidden; }
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
+    margin-top: -0.5rem;
   }
+
+/* 문화 프로그램 페이지 검색창 스타일 */
+#programPage .search-container {
+    display: flex;
+    gap: 0.5rem;
+    max-width: 1100px;
+    margin: 0 auto 1rem auto;
+    padding-bottom: 0;
+}
+
+#programPage .search-container input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 1rem;
+    outline: none;
+    background: #fff;
+    min-width: 800px;
+}
+
+#programPage .search-container button {
+    padding: 0.75rem 1.5rem;
+    background-color: #60a5fa;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: transform .08s ease, background-color .2s ease;
+    white-space: nowrap;
+}
+
+#programPage .search-container button:hover {
+    background-color: #5e8ae8;
+}
   @media (max-width: 900px) {
     .program-card-grid { grid-template-columns: 1fr; }
   }

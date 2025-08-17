@@ -368,7 +368,7 @@
     }
     // 로드뷰/카드 정리
     try { if (state.roadviewCardNode) { state.roadviewCardNode.remove(); state.roadviewCardNode = null; } } catch(_){}
-    try { if (state.roadviewContainer) { state.roadviewContainer.style.display = 'none'; } } catch(_){}
+    try { if (state.roadviewContainer) { state.roadviewContainer.style.display = 'none'; } } catch(_){ }
     // 랭킹 뱃지 오버레이 제거
     if (state.rankOverlays && state.rankOverlays.length) {
       state.rankOverlays.forEach(o => { try { o.setMap(null); } catch(_){} });
@@ -379,7 +379,7 @@
     const prevCharacters = document.querySelectorAll('.character-wrapper');
     prevCharacters.forEach(el => el.remove());
     state.hasAnimated = false;  // 애니메이션 재실행 가능하도록 초기화
-    try{ state.clusterer && state.clusterer.clear(); state.clusterer.setMap(null); }catch(_){}
+    try{ state.clusterer && state.clusterer.clear(); state.clusterer.setMap(null); }catch(_){ }
     // 폴리곤은 제거하지 않음 (투명도 유지)
     stopComfortFx();
   }
@@ -570,8 +570,8 @@
           try { emit('markerClick', d); } catch(_){ }
         });
         state.markers.push({ marker, baseSize, lib: d });
-  
-                // ✅ 캐릭터는 도서관 수만큼 생성되며 정확한 위치로 이동
+
+        // ✅ 캐릭터는 도서관 수만큼 생성되며 정확한 위치로 이동
         if (shouldAnimate) {
           // 줌 레벨 변경 후에 캐릭터 애니메이션 실행
           setTimeout(() => {
@@ -819,8 +819,11 @@
         // 알 수 없는 타입은 표시만 전체로 처리
         label = '전체';
       }
-      const featured = d.__featuredBookTitle ? `<div style=\"font-size:12px;color:#9a3412;opacity:.9;margin-top:4px;\">대표 도서: <b>${d.__featuredBookTitle}</b></div>` : '';
-      return `<div class=\"mini-card\" style=\"background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:6px 10px;\">\n                <div style=\"font-size:12px;color:#9a3412;\">${label} · ${window.activeBookGenre}</div>\n                <div style=\"font-weight:700;color:#7c2d12;\">${count.toLocaleString()}권</div>${featured}\n              </div>`;
+      const featured = d.__featuredBookTitle ? `<div style="font-size:12px;color:#9a3412;opacity:.9;margin-top:4px;">대표 도서: <b>${d.__featuredBookTitle}</b></div>` : '';
+      return `<div class="mini-card" style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:6px 10px;">
+                <div style="font-size:12px;color:#9a3412;">${label} · ${window.activeBookGenre}</div>
+                <div style="font-weight:700;color:#7c2d12;">${count.toLocaleString()}권</div>${featured}
+              </div>`;
     })() : '';
     const electronicInfo = '';
 
@@ -890,8 +893,8 @@
     
     // 지도 좌표를 화면 좌표로 변환
     const mapContainer = document.getElementById('map');
-    const proj = state.map.getProjection();
-    const point = proj.containerPointFromCoords(pos);
+    const proj2 = state.map.getProjection();
+    const point = proj2.containerPointFromCoords(pos);
     
     // 카드 위치 계산
     const cardWidth = 320;
@@ -1101,6 +1104,56 @@
     }
   }
 
+  // 사이드바에서 도서관 클릭 시 해당 마커를 위아래로 튕기듯 강조
+  function bounceMarkerForId(libraryId){
+    try {
+      if (!state.map || !libraryId) return;
+      const entry = state.markers.find(m => m && m.lib && m.lib.id === libraryId);
+      if (!entry || !entry.marker) return;
+      const marker = entry.marker;
+      const proj = state.map.getProjection();
+      const originalPos = marker.getPosition();
+      const originalPt = proj.containerPointFromCoords(originalPos);
+
+      const startAnimation = () => {
+        const totalFrames = 22; // 프레임 수
+        const amplitude = 16;   // 픽셀 이동량
+        const durationMs = 480; // 총 시간
+        const intervalMs = Math.max(12, Math.round(durationMs / totalFrames));
+        let frame = 0;
+        if (!state.__bounceTimers) state.__bounceTimers = new Map();
+        if (state.__bounceTimers.has(libraryId)) { clearInterval(state.__bounceTimers.get(libraryId)); state.__bounceTimers.delete(libraryId); }
+        const timer = setInterval(()=>{
+          try {
+            if (!state.map) { clearInterval(timer); return; }
+            if (frame >= totalFrames) {
+              clearInterval(timer);
+              marker.setPosition(proj.coordsFromContainerPoint(new kakao.maps.Point(originalPt.x, originalPt.y)));
+              state.__bounceTimers.delete(libraryId);
+              return;
+            }
+            const t = frame / (totalFrames - 1);
+            const dy = -Math.sin(t * Math.PI) * amplitude;
+            const nextPt = new kakao.maps.Point(originalPt.x, originalPt.y + dy);
+            marker.setPosition(proj.coordsFromContainerPoint(nextPt));
+            frame++;
+          } catch(_){ clearInterval(timer); }
+        }, intervalMs);
+        state.__bounceTimers.set(libraryId, timer);
+      };
+
+      // 클러스터 뷰(줌 레벨이 높아 개별 마커가 안 보이는 경우) 해제 후 애니메이션
+      const lvl = state.map.getLevel ? state.map.getLevel() : 99;
+      if (lvl > 8) {
+        try { state.map.panTo(originalPos); } catch(_){ }
+        try { state.map.setLevel(8); } catch(_){ }
+        setTimeout(startAnimation, 220);
+      } else {
+        startAnimation();
+      }
+    } catch(_){ }
+  }
+
   function hideRoadviewInfoCard(){
     try {
       if (state.roadviewCardNode) {
@@ -1123,12 +1176,13 @@
       node.textContent = msg;
       mapEl.appendChild(node);
       requestAnimationFrame(()=>{ node.classList.add('show'); });
-      setTimeout(()=>{ node.classList.remove('show'); setTimeout(()=>{ try{ node.remove(); }catch(_){} }, 250); }, 1800);
+      setTimeout(()=>{ node.classList.remove('show'); setTimeout(()=>{ try{ node.remove(); }catch(_){ } }, 250); }, 1800);
     } catch(_){ }
   }
 
   function select(libraryId){
     state.selectedId = libraryId;
+    try { if (libraryId) bounceMarkerForId(libraryId); } catch(_){ }
   }
 
   function on(event, handler){
@@ -1155,6 +1209,19 @@
     window.comfortFilter = null;
     // script.js에서 render를 호출하도록 함
   }
+
+  // 사이드바 도서관 아이템 클릭시에도 항상 지도 선택/애니메이션이 동작하도록 위임 핸들러 추가
+  document.addEventListener('click', (e)=>{
+    try {
+      const item = e.target && e.target.closest ? e.target.closest('.library-item') : null;
+      if (!item) return;
+      const id = parseInt(item.dataset && item.dataset.id ? item.dataset.id : '0', 10);
+      if (!id) return;
+      if (global.MapView && typeof global.MapView.select === 'function') {
+        global.MapView.select(id);
+      }
+    } catch(_){ }
+  }, { capture: true });
 
   global.MapView = { init, render, select, clear, on, loadInitialPolygons, setComfortFilter, showFilteredLibraries, showAllLibraries };
 })(window);
