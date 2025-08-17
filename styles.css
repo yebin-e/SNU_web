@@ -600,7 +600,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .genre-main {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1rem;
 }
 
 .genre-tabs-container { background: #ffffff; border-radius: 15px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
