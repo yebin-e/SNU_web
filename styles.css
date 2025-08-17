@@ -1163,8 +1163,8 @@ html, body { max-width: 100%; overflow-x: hidden; }
 
 .search-container { display: flex; gap: 0.5rem; max-width: 900px; margin: 0 auto; }
 .search-container input { flex: 1; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 10px; font-size: 1rem; outline: none; background: #fff; }
-.search-container button { padding: 0.75rem 1.25rem; background-color: var(--button); color: #111827; border: none; border-radius: 10px; cursor: pointer; font-size: 1rem; transition: transform .08s ease, background-color .2s ease; }
-.search-container button:hover { background-color: var(--button-dark); }
+.search-container button { padding: 0.75rem 1.25rem; background-color: #60a5fa; color: #ffffff; border: none; border-radius: 10px; cursor: pointer; font-size: 1rem; transition: transform .08s ease, background-color .2s ease; }
+.search-container button:hover { background-color: #5e8ae8; }
 .search-container button:active { transform: translateY(1px); }
 
 /* 카테고리 바 (페이드인) */
@@ -2225,14 +2225,18 @@ html, body { max-width: 100%; overflow-x: hidden; }
 
 #programPage .search-container button {
     padding: 0.75rem 1.5rem;
-    background-color: var(--button);
-    color: #111827;
+    background-color: #60a5fa;
+    color: #ffffff;
     border: none;
     border-radius: 10px;
     cursor: pointer;
     font-size: 1rem;
     transition: transform .08s ease, background-color .2s ease;
     white-space: nowrap;
+}
+
+#programPage .search-container button:hover {
+    background-color: #5e8ae8;
 }
   @media (max-width: 900px) {
     .program-card-grid { grid-template-columns: 1fr; }
