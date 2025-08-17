@@ -267,17 +267,19 @@
             <div class="genre-main">
                 <div class="info-section">
                     <h2>📅 문화·독서 프로그램 한눈에 보기</h2>
+                    <p class="intro-text">서울시 도서관에서 진행되는 다양한 문화·독서 프로그램을 연령대별로 확인하고 검색할 수 있습니다.</p>
                     <p>
                       <a href="https://lib.sen.go.kr/lib/module/teach/index.do?menu_idx=11#:~:text=%EB%8F%85%EC%84%9C%EB%AC%B8%ED%99%[…]B%82%A8%EC%82%B0%EB%8F%84%EC%84%9C%EA%B4%80" 
                          target="_blank" rel="noopener noreferrer">
                         프로그램 세부정보 확인하기
                       </a>
                     </p>
-                  </div>
-                  
-                  <div class="search-container">
-                    <input type="text" id="programSearchBox" placeholder="프로그램명/도서관명 검색" />
-                  </div>
+                </div>
+                
+                <div class="search-container">
+                    <input type="text" id="programSearchBox" placeholder="프로그램명 또는 도서관명을 검색하세요..." />
+                    <button id="programSearchBtn" class="search-btn">검색</button>
+                </div>
                   
                   <div class="program-card-grid" id="programCardGrid">
                     <!-- 여기에 library-program-card 카드들이 들어옴 -->
@@ -675,20 +677,33 @@
         </div>
     </div>
     <script>
-        document.getElementById("programSearchBox").addEventListener("input", function () {
-        const query = this.value.toLowerCase().trim();
-        const cards = document.querySelectorAll(".library-program-card");
+        // 프로그램 검색 기능
+        function performProgramSearch() {
+            const query = document.getElementById("programSearchBox").value.toLowerCase().trim();
+            const cards = document.querySelectorAll(".library-program-card");
 
-        cards.forEach(card => {
-            const text = card.innerText.toLowerCase();
-            if (text.includes(query)) {
-            card.style.display = "flex"; // 보이기
-            } else {
-            card.style.display = "none"; // 숨기기
+            cards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                if (text.includes(query)) {
+                    card.style.display = "flex"; // 보이기
+                } else {
+                    card.style.display = "none"; // 숨기기
+                }
+            });
+        }
+
+        // 입력창에서 실시간 검색
+        document.getElementById("programSearchBox").addEventListener("input", performProgramSearch);
+        
+        // 검색 버튼 클릭 시 검색 실행
+        document.getElementById("programSearchBtn").addEventListener("click", performProgramSearch);
+        
+        // Enter 키 입력 시 검색 실행
+        document.getElementById("programSearchBox").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                performProgramSearch();
             }
         });
-        });
-
     </script>
     <script src="map.js"></script>
     <script src="script.js"></script>

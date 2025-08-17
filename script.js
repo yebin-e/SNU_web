@@ -690,6 +690,7 @@ function initializeIntroScreen() {
     if (childrenPageBtn) {
       childrenPageBtn.addEventListener('click', () => {
         currentStep = 'children';
+        hideProgramPage(); // 문화 프로그램 페이지 숨기기
         showChildrenPage();
       });
     }
@@ -698,6 +699,7 @@ function initializeIntroScreen() {
     if (genrePageBtn) {
       genrePageBtn.addEventListener('click', () => {
         currentStep = 'genre';
+        hideProgramPage(); // 문화 프로그램 페이지 숨기기
         showGenrePage();
       });
     }
@@ -3157,6 +3159,7 @@ function initializeIntroScreen() {
       mainPageBtn.addEventListener('click', (e) => {
         e.preventDefault();
         currentStep = 'main';
+        hideProgramPage(); // 문화 프로그램 페이지 숨기기
         showMainScreen();
       });
     }
@@ -4919,6 +4922,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (agePageBtn) {
     agePageBtn.addEventListener('click', function() {
       console.log('연령대별 페이지 버튼 클릭됨');
+      hideProgramPage(); // 문화 프로그램 페이지 숨기기
       showAgePage();
     });
   }
