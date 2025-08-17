@@ -2200,7 +2200,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
-    margin-top: -1.5rem;
+    margin-top: -0.5rem;
   }
 
 /* 문화 프로그램 페이지 검색창 스타일 */
@@ -2208,10 +2208,8 @@ html, body { max-width: 100%; overflow-x: hidden; }
     display: flex;
     gap: 0.5rem;
     max-width: 1100px;
-    margin: 0 auto 0 auto;
+    margin: 0 auto 1rem auto;
     padding-bottom: 0;
-    margin-top: -1rem;
-    margin-bottom: 1rem;
 }
 
 #programPage .search-container input {
