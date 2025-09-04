@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>서울시 공공도서관 시각화</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/d3-cloud/build/d3.layout.cloud.js"></script>
+    <!-- 경계선 데이터는 seoul_boundaries.geojson 로컬 파일로 사용합니다. -->
+    <!-- Kakao Maps SDK -->
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=cbf0a2c8e6044d1dd06fc9d73ce57a40&autoload=false&libraries=clusterer,services"></script>
+</head>
+<body>
+    
+    
+    <!-- 인트로 화면 -->
+    <div id="introScreen" class="intro-screen">
+        <!-- 시네마틱 레이어 (이미지 파일은 img/modern-library-night.png, img/cozy-library.png 경로에 두세요) -->
+        <div class="cine-bg cine-bg-1" aria-hidden="true"></div>
+        <div class="cine-bg cine-bg-2" aria-hidden="true"></div>
+        <div class="float-icons" aria-hidden="true"></div>
+        <div class="rings3d" aria-hidden="true">
+            <div class="ring ring-0"></div>
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+        </div>
+        <div class="mouse-gradient-overlay" aria-hidden="true"></div>
+        <div class="intro-content">
+            <div class="intro-logo">
+                <svg class="library-icon" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- 도서관 기둥들 -->
+                    <rect x="60" y="120" width="20" height="280" fill="currentColor"/>
+                    <rect x="120" y="120" width="20" height="280" fill="currentColor"/>
+                    <rect x="180" y="120" width="20" height="280" fill="currentColor"/>
+                    <rect x="240" y="120" width="20" height="280" fill="currentColor"/>
+                    <rect x="300" y="120" width="20" height="280" fill="currentColor"/>
+                    <rect x="360" y="120" width="20" height="280" fill="currentColor"/>
+                    <rect x="420" y="120" width="20" height="280" fill="currentColor"/>
+                    
+                    <!-- 지붕/삼각형 -->
+                    <path d="M40 120 L256 40 L472 120 L40 120 Z" fill="currentColor"/>
+                    
+                    <!-- 바닥/기단 -->
+                    <rect x="20" y="400" width="472" height="30" fill="currentColor"/>
+                    <rect x="10" y="430" width="492" height="20" fill="currentColor"/>
+                    
+                    <!-- 입구/문 -->
+                    <rect x="220" y="300" width="72" height="100" fill="rgba(255,255,255,0.3)"/>
+                    
+                    <!-- 계단 -->
+                    <rect x="180" y="380" width="152" height="20" fill="currentColor"/>
+                    <rect x="160" y="390" width="192" height="10" fill="currentColor"/>
+                    
+                    <!-- 도서관 상단 장식 -->
+                    <rect x="50" y="100" width="412" height="20" fill="currentColor"/>
+                </svg>
+            </div>
+            <h1 class="intro-title">책 한 권과 쉼을 누리세요</h1>
+            <p class="intro-subtitle">서울에서 나만의 도서관 찾아보기</p>
+            <div class="scroll-indicator">
+                <span>아래로 스크롤하세요</span>
+                <div class="scroll-arrow">⇣</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 중간 화면 -->
+    <div id="middleScreen" class="middle-screen">
+        <div class="middle-content">
+            <div class="middle-logo">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 21L16.514 16.506M19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h1 class="middle-title">서울의 모든 도서관을 한눈에</h1>
+            <p class="middle-subtitle">원하는 서비스를 선택해주세요</p>
+            
+            <!-- 메뉴 버튼들 -->
+            <div class="menu-buttons">
+                <button class="menu-btn" id="mainPageBtn">
+                    <div class="menu-icon">🏢</div>
+                    <div class="menu-text">메인화면 접속</div>
+                    <div class="menu-desc">도서관 검색 및 정보 조회</div>
+                </button>
+                
+                <button class="menu-btn" id="childrenPageBtn">
+                    <div class="menu-icon">👶🏻</div>
+                    <div class="menu-text">어린이 이용정보</div>
+                    <div class="menu-desc">어린이 친화적인 도서관</div>
+                </button>
+                
+                <button class="menu-btn" id="genrePageBtn">
+                    <div class="menu-icon">📚</div>
+                    <div class="menu-text">장르별 이용정보</div>
+                    <div class="menu-desc">도서 장르별 이용 현황</div>
+                </button>
+
+                <button class="menu-btn" id="agePageBtn">
+                    <div class="menu-icon">👥</div>
+                    <div class="menu-text">연령대별 이용정보</div>
+                    <div class="menu-desc">연령대별 이용 현황</div>
+                </button>
+
+                <button class="menu-btn" id="programPageBtn">
+                    <div class="menu-icon">🎭</div>
+                    <div class="menu-text">문화 프로그램</div>
+                    <div class="menu-desc">도서관 문화·독서 프로그램</div>
+                </button>
+            </div>
+        </div>
+    </div>
+  
+    <!-- 장르별 한눈에 보기 페이지 -->
+    <div id="genrePage" class="genre-page" style="display: none;">
+        <div class="genre-content">
+            <header class="genre-header">
+                <button class="back-btn" id="backToMiddleFromGenre">⇠ 돌아가기</button>
+                <h1>📚 장르별 이용정보 한눈에 보기</h1>
+            </header>
+            
+            <div class="genre-main">
+                <div class="info-section">
+                    <h2>🎨 도서 장르별 이용 현황</h2>
+                    <p>서울시 도서관의 장르별 도서 이용 현황을 시각적으로 확인해보세요.</p>
+                </div>
+                
+                
+                
+                <!-- 새로운 랭킹 시스템 -->
+                <div class="advanced-rankings">
+                    <div class="ranking-category">
+                        <h3>🇰🇷 국내서 장르별 도서수 랭킹 Top 10</h3>
+                        <div class="ranking-tabs">
+                            <button class="ranking-tab active" data-type="domestic" data-genre="total">전체</button>
+                            <button class="ranking-tab" data-type="domestic" data-genre="총류">총류</button>
+                            <button class="ranking-tab" data-type="domestic" data-genre="철학">철학</button>
+                            <button class="ranking-tab" data-type="domestic" data-genre="종교">종교</button>
+                            <button class="ranking-tab" data-type="domestic" data-genre="사회과학">사회과학</button>
+                            <button class="ranking-tab" data-type="domestic" data-genre="순수과학">순수과학</button>
+                            <button class="ranking-tab" data-type="domestic" data-genre="기술과학">기술과학</button>
+                            <button class="ranking-tab" data-type="domestic" data-genre="예술">예술</button>
+                            <button class="ranking-tab" data-type="domestic" data-genre="언어">언어</button>
+                            <button class="ranking-tab" data-type="domestic" data-genre="문학">문학</button>
+                            <button class="ranking-tab" data-type="domestic" data-genre="역사">역사</button>
+                        </div>
+                        <div class="ranking-list" id="domesticRankingList"></div>
+                    </div>
+                    
+                    <div class="ranking-category">
+                        <h3>🌍 국외서 장르별 도서수 랭킹 Top 10</h3>
+                        <div class="ranking-tabs">
+                            <button class="ranking-tab active" data-type="foreign" data-genre="total">전체</button>
+                            <button class="ranking-tab" data-type="foreign" data-genre="총류">총류</button>
+                            <button class="ranking-tab" data-type="foreign" data-genre="철학">철학</button>
+                            <button class="ranking-tab" data-type="foreign" data-genre="종교">종교</button>
+                            <button class="ranking-tab" data-type="foreign" data-genre="사회과학">사회과학</button>
+                            <button class="ranking-tab" data-type="foreign" data-genre="순수과학">순수과학</button>
+                            <button class="ranking-tab" data-type="foreign" data-genre="기술과학">기술과학</button>
+                            <button class="ranking-tab" data-type="foreign" data-genre="예술">예술</button>
+                            <button class="ranking-tab" data-type="foreign" data-genre="언어">언어</button>
+                            <button class="ranking-tab" data-type="foreign" data-genre="문학">문학</button>
+                            <button class="ranking-tab" data-type="foreign" data-genre="역사">역사</button>
+                        </div>
+                        <div class="ranking-list" id="foreignRankingList"></div>
+                    </div>
+                    
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 어린이 정보 페이지 -->
+    <div id="childrenPage" class="children-page" style="display: none;">
+        <div class="children-content">
+            <header class="children-header">
+                <button class="back-btn" id="backToMiddle">⇠ 돌아가기</button>
+                <h1>👶🏻 어린이 이용정보 한눈에 보기</h1>
+            </header>
+            
+            <div class="children-main">
+                <div class="info-section">
+                    <h2>🎨 어린이 친화적인 도서관</h2>
+                    <p>어린이실을 보유하고 어린이 도서가 풍부한 도서관들을 소개합니다.</p>
+                </div>
+                
+
+                
+                <div class="children-library-section">
+                    <h3>🌟 어린이 도서를 많이 보유한 도서관 Top 10</h3>
+                    <div class="children-library-list" id="childrenLibraryList">
+                        <div id="childrenLibraryContainer"></div>
+                    </div>
+                </div>
+                
+                <div class="children-genre-section">
+                    <h3>📊 어린이 인쇄자료 장르별 대출 랭킹 Top 10</h3>
+                    <div class="genre-ranking-container">
+                        <div class="genre-tabs" id="genreTabs">
+                            <button class="genre-tab active" data-genre="total">전체</button>
+                            <button class="genre-tab" data-genre="총류">총류</button>
+                            <button class="genre-tab" data-genre="철학">철학</button>
+                            <button class="genre-tab" data-genre="종교">종교</button>
+                            <button class="genre-tab" data-genre="사회과학">사회과학</button>
+                            <button class="genre-tab" data-genre="순수과학">순수과학</button>
+                            <button class="genre-tab" data-genre="기술과학">기술과학</button>
+                            <button class="genre-tab" data-genre="예술">예술</button>
+                            <button class="genre-tab" data-genre="언어">언어</button>
+                            <button class="genre-tab" data-genre="문학">문학</button>
+                            <button class="genre-tab" data-genre="역사">역사</button>
+                        </div>
+                        <div class="genre-ranking-list" id="genreRankingList">
+                            <!-- 장르별 랭킹이 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 연령대별 이용정보 페이지 -->
+    <div id="agePage" class="age-page genre-page" style="display: none;">
+        <div class="genre-content">
+            <header class="genre-header">
+                <button class="back-btn" id="backToMiddleFromAge">⇠ 돌아가기</button>
+                <h1>👥 연령대별 이용정보 한눈에 보기</h1>
+            </header>
+            <div class="genre-main">
+                <div class="info-section">
+                    <h2>📊 연령대별 이용 현황</h2>
+                    <p>연령대별 도서 이용 정보를 확인할 수 있는 페이지입니다.</p>
+                </div>
+                <div class="advanced-rankings">
+                    <div class="ranking-category">
+                        <h3>📖 인쇄자료 연령대별 대출수 랭킹 Top 10</h3>
+                        <div class="ranking-tabs">
+                            <button class="ranking-tab active" data-type="print" data-age="어린이">어린이</button>
+                            <button class="ranking-tab" data-type="print" data-age="청소년">청소년</button>
+                            <button class="ranking-tab" data-type="print" data-age="성인">성인</button>
+                        </div>
+                        <div class="ranking-list" id="printAgeRankingList"></div>
+                    </div>
+
+                    <div class="ranking-category">
+                        <h3>💻 전자자료 연령대별 대출수 랭킹 Top 10</h3>
+                        <div class="ranking-tabs">
+                            <button class="ranking-tab active" data-type="electronic" data-age="어린이">어린이</button>
+                            <button class="ranking-tab" data-type="electronic" data-age="청소년">청소년</button>
+                            <button class="ranking-tab" data-type="electronic" data-age="성인">성인</button>
+                        </div>
+                        <div class="ranking-list" id="electronicAgeRankingList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 문화 프로그램 페이지 -->
+    <div id="programPage" class="genre-page" style="display:none;">
+        <div class="genre-content">
+            <header class="genre-header">
+                <button class="back-btn" id="backToMiddleFromProgram">⇠ 돌아가기</button>
+                <h1>🎭 문화 프로그램 한눈에 보기</h1>
+            </header>
+            <div class="genre-main">
+                <div class="info-section">
+                    <h2>📅 문화·독서 프로그램 현황</h2>
+                    <p class="intro-text">서울시 도서관에서 진행되는 다양한 문화·독서 프로그램을 연령대별로 확인하고 검색할 수 있습니다.</p>
+                    <p>
+                      <a href="https://lib.sen.go.kr/lib/module/teach/index.do?menu_idx=11#:~:text=%EB%8F%85%EC%84%9C%EB%AC%B8%ED%99%[…]B%82%A8%EC%82%B0%EB%8F%84%EC%84%9C%EA%B4%80" 
+                         target="_blank" rel="noopener noreferrer">
+                        프로그램 세부정보 확인하기
+                      </a>
+                    </p>
+                </div>
+                
+                <div class="search-container">
+                    <input type="text" id="programSearchBox" placeholder="프로그램명 또는 도서관명을 검색하세요..." />
+                    <button id="programSearchBtn" class="search-btn">검색</button>
+                </div>
+                  
+                  <div class="program-card-grid" id="programCardGrid">
+                    <!-- 여기에 library-program-card 카드들이 들어옴 -->
+                  </div>
+                  
+                <div class="program-card-grid">
+                    <div class="library-program-card">
+                        <div class="library-program-card__header">
+                          <div class="library-program-card__title">양원숲속도서관 프로그램</div>
+                          <div class="library-program-card__meta">서울 · 중랑구</div>
+                        </div>
+                      
+                        <div class="library-program-card__body">
+                          <!-- 시니어 -->
+                          <section class="program-section program-section--family">
+                            <div class="program-section__head">
+                              <span class="program-section__badge">👵 시니어</span>
+                            </div>
+                            <ul class="program-section__list">
+                              <li>양원숲속도서관 5060 시니어 북클럽</li>
+                              <li>&lt;다시, 삶을 읽고 쓰다&gt; 시니어 글쓰기 프로젝트</li>
+                            </ul>
+                          </section>
+                      
+                          <!-- 성인 -->
+                          <section class="program-section program-section--inf">
+                            <div class="program-section__head">
+                              <span class="program-section__badge">👩‍💼 성인</span>
+                            </div>
+                            <ul class="program-section__list">
+                              <li>얼리버드 &lt;도서: 이 중 하나는 거짓말&gt;</li>
+                            </ul>
+                          </section>
+                      
+                          <!-- 초등 -->
+                          <section class="program-section program-section--kids">
+                            <div class="program-section__head">
+                              <span class="program-section__badge">📚 초등</span>
+                            </div>
+                            <ul class="program-section__list">
+                              <li>&lt;그림책이랑&gt;과 함께하는 재미 톡! 톡!</li>
+                            </ul>
+                          </section>
+                      
+                          <!-- 영유아 -->
+                          <section class="program-section program-section--kids">
+                            <div class="program-section__head">
+                              <span class="program-section__badge">👶 영유아</span>
+                            </div>
+                            <ul class="program-section__list">
+                              <li>&lt;그림책이랑&gt;과 함께하는 재미 톡! 톡!</li>
+                            </ul>
+                          </section>
+                      
+                          <!-- 청소년 -->
+                          <section class="program-section program-section--youth">
+                            <div class="program-section__head">
+                              <span class="program-section__badge">🧑‍🎓 청소년</span>
+                            </div>
+                            <ul class="program-section__list">
+                              <li>1318 청소년 함께읽기 &lt;고유한 책읽기 B반&gt; – 중1~중3</li>
+                              <li>1318 청소년 함께읽기 &lt;고유한 책읽기 A반&gt; – 초등학교 6학년</li>
+                              <li>1318 청소년 함께읽기 &lt;책하루 B반&gt; – 중1~중3</li>
+                              <li>1318 청소년 함께읽기 &lt;책하루 A반&gt; – 초등학교 6학년</li>
+                            </ul>
+                          </section>
+                        </div>
+                      
+                        <div class="library-program-card__footer">
+                          <button class="library-program-card__btn">도서관 홈페이지</button>
+                          <button class="library-program-card__btn">프로그램 더보기</button>
+                        </div>
+                      </div>
+                      
+                    <div class="library-program-card">
+                        <div class="library-program-card__header">
+                          <div class="library-program-card__title">구로구 도서관 프로그램</div>
+                          <div class="library-program-card__meta">서울 · 구로구</div>
+                        </div>
+                      
+                        <div class="library-program-card__body">
+                          <!-- 인문 -->
+                          <section class="program-section program-section--inf">
+                            <div class="program-section__head">
+                              <span class="program-section__badge">📖 인문</span>
+                            </div>
+                            <ul class="program-section__list">
+                              <li>2025 인문학 책크인 1회차 - 뇌과학, 나를 돌보다</li>
+                              <li>2025 인문학 책크인 2회차 - 단순할수록 행복해지는 일상</li>
+                              <li>2025 구로의책 작가와의 만남 &lt;다정함에 대하여&gt;</li>
+                            </ul>
+                          </section>
+                      
+                          <!-- 영유아 -->
+                          <section class="program-section program-section--kids">
+                            <div class="program-section__head">
+                              <span class="program-section__badge">👶 영유아</span>
+                            </div>
+                            <ul class="program-section__list">
+                              <li>2025 북돋움 &lt;「누가 숨었나?」 수수 작가님과 함께 보드북 읽기&gt; (*아이 동반 가능*)</li>
+                            </ul>
+                          </section>
+                      
+                          <!-- 어린이 -->
+                          <section class="program-section program-section--inf">
+                            <div class="program-section__head">
+                              <span class="program-section__badge">📚 어린이</span>
+                            </div>
+                            <ul class="program-section__list">
+                              <li>[구로기적의도서관] &lt;견우와 직녀&gt; : '우리를 잇는 오작교 레이스’ 프로그램</li>
+                              <li>어린이 환경 문해력 프로그램</li>
+                              <li>2025 힙독서울-구로의책 &lt;달려라! 달팽이&gt;</li>
+                              <li>2025 어린이사서 &lt;동생들과 함께 그림책 읽고 아이싱쿠키 만들어요!&gt; 프로그램</li>
+                              <li>2025 힙독서울-구로의책 &lt;모두의 행운을 빌어요! - 점자키링 만들기&gt;</li>
+                            </ul>
+                          </section>
+                      
+                          <!-- 청소년 -->
+                          <section class="program-section program-section--youth">
+                            <div class="program-section__head">
+                              <span class="program-section__badge">🧑‍🎓 청소년</span>
+                            </div>
+                            <ul class="program-section__list">
+                              <li>★ 2025 기적의 청소년 사서 특별 프로그램 &lt;꿈꾸는 나, 빛나는 나&gt; 추가 모집★</li>
+                            </ul>
+                          </section>
+                      
+                          <!-- 가족 -->
+                          <section class="program-section program-section--family">
+                            <div class="program-section__head">
+                              <span class="program-section__badge">👨‍👩‍👧 가족</span>
+                            </div>
+                            <ul class="program-section__list">
+                              <li>♧ 가족 독서동아리 「일싫책읽 챌린저」♣</li>
+                            </ul>
+                          </section>
+                        </div>
+                      
+                        <div class="library-program-card__footer">
+                          <button class="library-program-card__btn">도서관 홈페이지</button>
+                          <button class="library-program-card__btn">프로그램 더보기</button>
+                        </div>
+                      </div>
+                      
+                    <div class="library-program-card">
+                        <div class="library-program-card__header">
+                          <div class="library-program-card__title">관악구 도서관 프로그램</div>
+                          <div class="library-program-card__meta">서울 · 관악구</div>
+                        </div>
+                      
+                        <div class="library-program-card__body">
+                          <!-- 영유아 -->
+                          <section class="program-section program-section--kids">
+                            <div class="program-section__head">
+                              <span class="program-section__badge">👶 영유아</span>
+                            </div>
+                            <ul class="program-section__list">
+                              <li>[북스타트 9월 책놀이] 플러스2 (18~36개월)</li>
+                              <li>[북스타트 9월 책놀이] 보물상자1 (37~54개월)</li>
+                              <li>[북스타트 9월 책놀이] 보물상자2 (55개월~7세)</li>
+                              <li>[북스타트 9월 책놀이] 플러스1 (18~36개월)</li>
+                              <li>스마트플레이스 접수 – 관악아트홀 어린이라운지 2025년 7-8월 프로그램</li>
+                              <li>[파랑아 놀자 : 여름방학 대소동]</li>
+                            </ul>
+                          </section>
+                      
+                          <!-- 어린이 -->
+                          <section class="program-section program-section--inf">
+                            <div class="program-section__head">
+                              <span class="program-section__badge">📚 어린이</span>
+                            </div>
+                            <ul class="program-section__list">
+                              <li>[북스타트 9월 책놀이] 책날개1 (초등1~2학년)</li>
+                              <li>[북스타트 9월 책놀이] 책날개2 (초등1~2학년)</li>
+                              <li>[북스타트 9월 책놀이] 책날개3 (초등3학년)</li>
+                            </ul>
+                          </section>
+                      
+                          <!-- 인문 -->
+                          <section class="program-section program-section--inf">
+                            <div class="program-section__head">
+                              <span class="program-section__badge">📖 인문</span>
+                            </div>
+                            <ul class="program-section__list">
+                              <li>책으로 모이는 관악 「Let's Go Read」</li>
+                              <li>관악중앙도서관 어린이자료실 8월 상설 기획프로그램</li>
+                              <li>&lt;여름 방학 고전 읽기&gt;</li>
+                            </ul>
+                          </section>
+                      
+                          <!-- 문화 -->
+                          <section class="program-section program-section--family">
+                            <div class="program-section__head">
+                              <span class="program-section__badge">🎭 문화</span>
+                            </div>
+                            <ul class="program-section__list">
+                              <li>[2025 약자와의 동행 「같이+」]</li>
+                              <li>동행콘서트 : 너와 나, 그리고 우리</li>
+                            </ul>
+                          </section>
+                        </div>
+                      
+                        <div class="library-program-card__footer">
+                          <button class="library-program-card__btn">도서관 홈페이지</button>
+                          <button class="library-program-card__btn">프로그램 더보기</button>
+                        </div>
+                      </div>
+                      
+                    <div class="library-program-card">
+                      <div class="library-program-card__header">
+                        <div class="library-program-card__title">정독도서관 프로그램</div>
+                        <div class="library-program-card__meta">서울 · 종로구</div>
+                      </div>
+                  
+                      <div class="library-program-card__body">
+                        <section class="program-section program-section--inf">
+                          <div class="program-section__head">
+                            <span class="program-section__badge">👩‍💼 성인+청소년</span>
+                          </div>
+                          <ul class="program-section__list">
+                            <li>앙리 마티스의 비하인드 스토리 ｜ 정독에서정독하기</li>
+                            <li>최소한의 품격 ｜ 인문학토크 안내</li>
+                            <li>모던 빠리 ｜ 인문학토크</li>
+                            <li>이다의 자연 관찰 일기 ｜ 인문학토크 안내</li>
+                            <li>우리는 왜 얼굴에 혹할까? ｜ 인문학토크 안내</li>
+                            <li>박물관으로 보는 영국사의 쟁점들 ｜ 정독에서정독하기</li>
+                          </ul>
+                        </section>
+                  
+                        <section class="program-section program-section--kids">
+                          <div class="program-section__head">
+                            <span class="program-section__badge">👴 신중년</span>
+                          </div>
+                          <ul class="program-section__list">
+                            <li>일상의 우아함, 처음 만나는 홍차 ｜ 삶을가꾸는정독</li>
+                            <li>슬기로운 의사소통, 중국어 여행회화 ｜ 삶을가꾸는정독</li>
+                          </ul>
+                        </section>
+                  
+                        <section class="program-section">
+                          <div class="program-section__head">
+                            <span class="program-section__badge">👩‍💼 성인</span>
+                          </div>
+                          <ul class="program-section__list">
+                            <li>「구중궁궐에 내려앉은 운율」 ｜ 독서의 달 저자강연회</li>
+                          </ul>
+                        </section>
+                      </div>
+                  
+                      <div class="library-program-card__footer">
+                        <button class="library-program-card__btn">도서관 홈페이지</button>
+                        <button class="library-program-card__btn">프로그램 더보기</button>
+                      </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+                  
+    <div class="container">
+        <!-- 헤더 -->
+        <header class="header">
+            <div class="header-top">
+                <button class="back-btn main-back-btn" id="backToMenu" style="display: none;">← 메뉴로 돌아가기</button>
+                <h1>📚 서울시 공공도서관 정보</h1>
+            </div>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="도서관명 또는 지역을 검색하세요...">
+                <button id="searchBtn">검색</button>
+            </div>
+                        <div class="category-bar">
+                <div class="category-group">
+                    <div class="category-title">인쇄자료</div>
+                    <!-- 1단계: 전체/국내서/국외서 선택 -->
+                    <div class="category-level-1">
+                        <div class="category-chips" id="bookTypeChips">
+                            <button class="chip primary-chip" data-type="bookType" data-value="total">전체</button>
+                            <button class="chip primary-chip" data-type="bookType" data-value="domestic">국내서</button>
+                            <button class="chip primary-chip" data-type="bookType" data-value="foreign">국외서</button>
+                        </div>
+                    </div>
+                    <!-- 2단계: 세부 분류 선택 -->
+                    <div class="category-level-2" id="bookSubcategoryContainer" style="display: none;">
+                        <div class="category-chips" id="bookCategoryChips">
+                            <button class="chip secondary-chip" data-type="book" data-value="총류">총류</button>
+                            <button class="chip secondary-chip" data-type="book" data-value="철학">철학</button>
+                            <button class="chip secondary-chip" data-type="book" data-value="종교">종교</button>
+                            <button class="chip secondary-chip" data-type="book" data-value="사회과학">사회과학</button>
+                            <button class="chip secondary-chip" data-type="book" data-value="순수과학">순수과학</button>
+                            <button class="chip secondary-chip" data-type="book" data-value="기술과학">기술과학</button>
+                            <button class="chip secondary-chip" data-type="book" data-value="예술">예술</button>
+                            <button class="chip secondary-chip" data-type="book" data-value="언어">언어</button>
+                            <button class="chip secondary-chip" data-type="book" data-value="문학">문학</button>
+                            <button class="chip secondary-chip" data-type="book" data-value="역사">역사</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="category-group">
+                    <div class="category-title">전자자료</div>
+                    <div class="category-chips" id="electronicCategoryChips">
+                        <button class="chip" data-type="electronic" data-value="전자저널">전자저널</button>
+                        <button class="chip" data-type="electronic" data-value="전자도서">전자도서</button>
+                        <button class="chip" data-type="electronic" data-value="오디오북">오디오북</button>
+                        <button class="chip" data-type="electronic" data-value="웹데이터베이스">웹데이터베이스</button>
+                        <button class="chip" data-type="electronic" data-value="기타">기타</button>
+                    </div>
+                </div>
+                <div class="category-group">
+                    <div class="category-title">이런 도서관은 어때요</div>
+                    <div class="category-chips" id="studyCategoryChips">
+                        <button class="chip" data-type="study" data-value="여유">좌석 여유</button>
+                        <button class="chip" data-type="comfort" data-value="매우좋음">매우 쾌적함</button>
+                        <button class="chip" data-type="hot" data-value="인기많음">인기가 많아요</button>
+                        <button class="chip" data-type="comfort" data-value="어린이">어린이 친화적</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 메인 콘텐츠 -->
+        <main class="main-content">
+            <!-- 지도 영역 (플레이스홀더) -->
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+
+            <!-- 사이드바 -->
+            <aside class="sidebar">
+                <div class="sidebar-card">
+                    <div class="sidebar-header">
+                        <h3>도서관 목록</h3>
+                        <div class="filter-controls">
+                            <select id="districtFilter">
+                                <option value="">전체 구</option>
+                                <option value="강남구">강남구</option>
+                                <option value="강동구">강동구</option>
+                                <option value="강북구">강북구</option>
+                                <option value="강서구">강서구</option>
+                                <option value="관악구">관악구</option>
+                                <option value="광진구">광진구</option>
+                                <option value="구로구">구로구</option>
+                                <option value="금천구">금천구</option>
+                                <option value="노원구">노원구</option>
+                                <option value="도봉구">도봉구</option>
+                                <option value="동대문구">동대문구</option>
+                                <option value="동작구">동작구</option>
+                                <option value="마포구">마포구</option>
+                                <option value="서대문구">서대문구</option>
+                                <option value="서초구">서초구</option>
+                                <option value="성동구">성동구</option>
+                                <option value="성북구">성북구</option>
+                                <option value="송파구">송파구</option>
+                                <option value="양천구">양천구</option>
+                                <option value="영등포구">영등포구</option>
+                                <option value="용산구">용산구</option>
+                                <option value="은평구">은평구</option>
+                                <option value="종로구">종로구</option>
+                                <option value="중구">중구</option>
+                                <option value="중랑구">중랑구</option>
+                            </select>
+                            <select id="sortSelect" class="sort-select">
+                                <option value="">정렬 없음</option>
+                                <option value="holdingsDesc">보유도서 많은 순</option>
+                                <option value="visitorsDesc">방문자 많은 순</option>
+                                <option value="loansDesc">대출 많은 순</option>
+                                <option value="seatsDesc">좌석 많은 순</option>
+                                <option value="areaDesc">면적 큰 순</option>
+                                <option value="yearDesc">개관년도 최신 순</option>
+                                <option value="yearAsc">개관년도 오래된 순</option>
+                            </select>
+                        </div>
+                        <div class="age-filter-section">
+                            <select id="ageFocus" class="age-select">
+                                <option value="">연령대 집중 없음</option>
+                                <option value="child">어린이 이용 많음</option>
+                                <option value="teen">청소년 이용 많음</option>
+                                <option value="adult">성인 이용 많음</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="library-list" id="libraryList">
+                        <div class="library-list-inner" id="libraryListInner"></div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <!-- 상세 정보 모달 -->
+        <div id="detailModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div id="modalContent"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // 프로그램 검색 기능
+        function performProgramSearch() {
+            const query = document.getElementById("programSearchBox").value.toLowerCase().trim();
+            const cards = document.querySelectorAll(".library-program-card");
+
+            cards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                if (text.includes(query)) {
+                    card.style.display = "flex"; // 보이기
+                } else {
+                    card.style.display = "none"; // 숨기기
+                }
+            });
+        }
+
+        // 입력창에서 실시간 검색
+        document.getElementById("programSearchBox").addEventListener("input", performProgramSearch);
+        
+        // 검색 버튼 클릭 시 검색 실행
+        document.getElementById("programSearchBtn").addEventListener("click", performProgramSearch);
+        
+        // Enter 키 입력 시 검색 실행
+        document.getElementById("programSearchBox").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                performProgramSearch();
+            }
+        });
+    </script>
+    <script src="map.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
